@@ -12,7 +12,7 @@ import { Plus, Pencil, Trash2, Loader2, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const SCOPE_BADGE: Record<ConstraintScope, string> = {
-  INSTITUTION: 'bg-slate-100 text-slate-700',
+  UNIT: 'bg-slate-100 text-slate-700',
   TRAINER:     'bg-blue-100 text-blue-700',
   COHORT:      'bg-violet-100 text-violet-700',
   ROOM:        'bg-teal-100 text-teal-700',
@@ -41,7 +41,7 @@ export default function ConstraintsPage() {
   })
 
   function handleDelete(c: Constraint) {
-    if (!confirm(`Delete constraint "${c.name}"? This cannot be undone.`)) return
+    if (!confirm(`Delete constraint "${c.notes}"? This cannot be undone.`)) return
     setDeletingId(c.id)
     deleteMutation.mutate(c.id)
   }
@@ -109,7 +109,7 @@ export default function ConstraintsPage() {
             <tbody className="divide-y divide-gray-100">
               {constraints.map(c => (
                 <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-gray-800">{c.name}</td>
+                  <td className="px-4 py-3 font-medium text-gray-800">{c.notes}</td>
                   <td className="px-4 py-3">
                     <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-medium', SCOPE_BADGE[c.scope])}>
                       {c.scope.charAt(0) + c.scope.slice(1).toLowerCase()}

@@ -1,1 +1,14 @@
-﻿
+﻿export const dynamic = 'force-dynamic'
+
+interface Props {
+  params: { id: string }
+}
+
+export default function TrainerTimetablePage({ params }: Props) {
+  return (
+    <div className="p-6">
+      <h1 className="text-xl font-semibold">Trainer Timetable</h1>
+      <p className="text-gray-500 mt-2">Trainer ID: {params.id}</p>
+    </div>
+  )
+}
