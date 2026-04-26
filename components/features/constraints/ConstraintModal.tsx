@@ -87,11 +87,11 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
   useEffect(() => {
     if (!open) return
     if (constraint) {
-      const c = constraint as {
+      const c = constraint as unknown as {
         name: string
         is_active: boolean
         curriculum_unit?: string
-        parameters?: { day?: string; period_id?: string }
+        parameters?: { day?: string; period_id?: string; preferred_room?: string }
       }
       setName(c.name)
       setUnitId(c.curriculum_unit ?? '')

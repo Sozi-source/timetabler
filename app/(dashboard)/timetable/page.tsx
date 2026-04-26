@@ -103,9 +103,9 @@ function TimetableCell({
           )}
         >
           <p className="font-semibold text-gray-800 truncate">{entry.unit_name}</p>
-          <p className="text-gray-500 truncate">{entry.cohort}</p>
-          {entry.trainer && <p className="text-gray-400 truncate">{entry.trainer}</p>}
-          {entry.room    && <p className="text-gray-400 truncate">{entry.room}</p>}
+          <p className="text-gray-500 truncate">{entry.cohort.name}</p>
+          {entry.trainer && <p className="text-gray-400 truncate">{entry.trainer ? `${entry.trainer.first_name} ${entry.trainer.last_name}` : null}</p>}
+          {entry.room    && <p className="text-gray-400 truncate">{entry.room?.name}</p>}
         </button>
       ))}
     </div>
@@ -164,7 +164,7 @@ export default function TimetablePage() {
   })
 
   const publish = useMutation({
-    mutationFn: (force = false) =>
+    mutationFn: (force: boolean = false) =>
       api.post('/timetable/publish/', { term_id: termId, force }),
     onSuccess: (r) => {
       const published = r.data?.data?.published ?? r.data?.published ?? '?'
@@ -182,7 +182,7 @@ export default function TimetablePage() {
         qc.invalidateQueries({ queryKey: ['timetable', termId] })
       } else if (status === 409) {
         toast.error(`${msg}`, {
-          action: { label: 'Force publish', onClick: () => publish.mutate(true) },
+          action: { label: 'Force publish', onClick: () => publish.mutate(true as any) },
         })
       } else {
         toast.error(msg)
@@ -281,7 +281,7 @@ export default function TimetablePage() {
           </button>
 
           <button
-            onClick={() => publish.mutate(false)}
+            onClick={() => publish.mutate(false as any)}
             disabled={publish.isPending}
             className="flex items-center gap-1.5 px-4 py-2 text-sm bg-[#1e3a5f] text-white rounded-lg hover:bg-[#162d4a] font-medium disabled:opacity-50"
           >

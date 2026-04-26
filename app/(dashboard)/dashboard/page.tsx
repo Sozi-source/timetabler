@@ -1,5 +1,6 @@
 ﻿'use client'
-import { Users, BookOpen, Calendar, AlertTriangle } from 'lucide-react'
+import { Users, BookOpen, Calendar, AlertTriangle, Zap } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useDashboard } from '@/hooks/useTimetable'
 import { useTermStore } from '@/store'
 import StatCard from '@/components/features/dashboard/StatCard'
@@ -7,6 +8,7 @@ import TermProgress from '@/components/features/dashboard/TermProgress'
 import ActionButton from '@/components/features/dashboard/ActionButton'
 
 export default function DashboardPage() {
+  const router = useRouter()
   const { activeTerm } = useTermStore()
   const { data, isLoading } = useDashboard()
 
@@ -19,14 +21,21 @@ export default function DashboardPage() {
       {isLoading && <div className='h-32 rounded-xl bg-gray-100 animate-pulse' />}
       {data && (
         <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
-          <StatCard label='Cohorts'   value={data.total_cohorts ?? 0}      icon={Users}         accent='blue' />
-          <StatCard label='Trainers'  value={data.total_trainers ?? 0}     icon={BookOpen}      accent='emerald' />
-          <StatCard label='Sessions'  value={data.scheduled_units ?? 0}    icon={Calendar}      accent='amber' />
-          <StatCard label='Conflicts' value={data.pending_conflicts ?? 0}  icon={AlertTriangle} accent='red' />
+          <StatCard label='Cohorts'   value={data.total_cohorts ?? 0}     icon={Users}         accent='blue' />
+          <StatCard label='Trainers'  value={data.total_trainers ?? 0}    icon={BookOpen}      accent='emerald' />
+          <StatCard label='Sessions'  value={data.scheduled_units ?? 0}   icon={Calendar}      accent='amber' />
+          <StatCard label='Conflicts' value={data.pending_conflicts ?? 0} icon={AlertTriangle} accent='red' />
         </div>
       )}
-      {data && <TermProgress data={data} />}
-      <ActionButton />
+      {data?.term && <TermProgress term={data.term} />}
+      <div className='flex gap-3'>
+        <ActionButton
+          label='Generate Timetable'
+          icon={Zap}
+          onClick={() => router.push('/timetable')}
+          variant='primary'
+        />
+      </div>
     </div>
   )
 }

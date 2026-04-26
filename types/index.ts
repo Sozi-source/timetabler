@@ -14,7 +14,7 @@ export interface PaginatedResponse<T> {
 }
 
 // ── Institution ───────────────────────────────────────────────────────────
-export interface Institution {
+export interface Institution {`n  code?: string;`n  logo_url?: string;
   id: string;
   name: string;
   short_name: string;
@@ -41,7 +41,7 @@ export type ProgrammeLevel =
   | 'CERT' | 'DIP' | 'HDIP' | 'DEG'
   | 'PG_DIP' | 'MASTERS' | 'PHD' | 'OTHER';
 
-export interface Programme {
+export interface Programme {`n  duration_terms?: number;`n  nqf_level?: number;
   id: string;
   code: string;
   name: string;
@@ -74,7 +74,7 @@ export interface CurriculumUnit {
 }
 
 // ── Period ────────────────────────────────────────────────────────────────
-export interface Period {
+export interface Period {`n  start?: string;`n  end?: string;`n  duration?: number;
   id: string;
   institution: string;      // UUID
   label: string;
@@ -212,7 +212,7 @@ export interface Conflict {
   resolution_status: ResolutionStatus;
   resolved_by: string | null;
   resolved_at: string | null;
-  resolution_note: string;
+  resolution_note: string;`n  involved_entries?: string[];
   created_at: string;
 }
 

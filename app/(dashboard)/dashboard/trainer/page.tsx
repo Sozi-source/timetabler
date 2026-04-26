@@ -30,13 +30,18 @@ export default function TrainerDashboardPage() {
   const { data: dash, isLoading: dashLoading } = useTrainerDashboard()
   const { data: trainers = [] }                = useTrainers()
 
-  const trainer   = trainers.find(t => t.staff_no === user?.username || t.user === user?.id)
+  const trainer   = trainers.find(t => t.staff_id === user?.username)
   const trainerId = trainer?.id ?? ''
 
   const { data: ttData, isLoading: gridLoading } = useTrainerTimetable(trainerId, termId)
   const entries = ttData?.entries ?? []
   const periods = ttData?.periods ?? []
   const days    = ttData?.days    ?? []
+
+  // Derive values from what TrainerDashboardData actually has
+  const scheduledCount   = (dash as any)?.scheduled_count   ?? 0
+  const periodsThisWeek  = (dash as any)?.periods_this_week  ?? scheduledCount
+  const maxPeriodsPerDay = (dash as any)?.max_periods_per_day ?? 4
 
   if (!termId) return (
     <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-8 text-center">
@@ -49,7 +54,7 @@ export default function TrainerDashboardPage() {
       <div>
         <h1 className="text-xl font-bold text-gray-900">My Dashboard</h1>
         <p className="text-sm text-gray-500 mt-0.5">
-          {user?.first_name ? `${user.first_name} ${user.last_name}` : user?.username} · {activeTerm?.name}
+          {user?.username} · {activeTerm?.name}
         </p>
       </div>
       {dashLoading ? (
@@ -61,23 +66,23 @@ export default function TrainerDashboardPage() {
           <div className="rounded-xl border border-gray-200 bg-white shadow-sm px-5 py-4 space-y-2">
             <div className="flex items-center gap-2 text-gray-500">
               <BookOpen className="h-4 w-4" />
-              <span className="text-xs font-medium uppercase tracking-wide">Assigned Units</span>
+              <span className="text-xs font-medium uppercase tracking-wide">Scheduled Units</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{dash.assigned_units ?? 0}</p>
+            <p className="text-3xl font-bold text-gray-900">{scheduledCount}</p>
           </div>
           <div className="rounded-xl border border-gray-200 bg-white shadow-sm px-5 py-4 space-y-2">
             <div className="flex items-center gap-2 text-gray-500">
               <Clock className="h-4 w-4" />
               <span className="text-xs font-medium uppercase tracking-wide">Periods This Week</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{dash.periods_this_week ?? 0}</p>
+            <p className="text-3xl font-bold text-gray-900">{periodsThisWeek}</p>
           </div>
           <div className="rounded-xl border border-gray-200 bg-white shadow-sm px-5 py-4 space-y-3">
             <div className="flex items-center gap-2 text-gray-500">
               <TrendingUp className="h-4 w-4" />
               <span className="text-xs font-medium uppercase tracking-wide">Capacity</span>
             </div>
-            <WorkloadBar used={dash.periods_this_week ?? 0} max={(dash.max_periods_per_day ?? 4) * 5} />
+            <WorkloadBar used={periodsThisWeek} max={maxPeriodsPerDay * 5} />
           </div>
         </div>
       ) : null}

@@ -118,7 +118,7 @@ export default function TimetableGrid({
                           key={entry.id}
                           entry={entry}
                           colourIndex={cohortColourMap.get(entry.cohort) ?? 0}
-                          onClick={readOnly ? undefined : setSelected}
+                          onClick={readOnly ? undefined : (entry) => setSelected(entry)}
                         />
                       ))}
                     </div>
