@@ -22,7 +22,7 @@ export default function InstitutionPage() {
   const [logoUrl, setLogoUrl] = useState('')
 
   useEffect(() => {
-    if (inst) { setName(inst.name); setCode(inst.code); setDays((inst.days_of_week ?? []) as DayCode[]); setLogoUrl(inst.logo_url ?? '') }
+    if (inst) { setName(inst.name); setCode(inst.code ?? ""); setDays((inst.days_of_week ?? []) as DayCode[]); setLogoUrl(inst.logo_url ?? '') }
   }, [inst])
 
   const mutation = useMutation({

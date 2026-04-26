@@ -24,7 +24,7 @@ export default function ProgrammesPage() {
   const [delId,   setDelId]   = useState<string|null>(null)
 
   function openCreate() { setEditing(null); setForm({...BLANK}); setOpen(true) }
-  function openEdit(p: Programme) { setEditing(p); setForm({name:p.name,code:p.code,department:p.department,duration_terms:p.duration_terms,nqf_level:p.nqf_level}); setOpen(true) }
+  function openEdit(p: Programme) { setEditing(p); setForm({name:p.name,code:p.code,department:p.department,duration_terms:p.duration_terms ?? 4,nqf_level:p.nqf_level ?? 4}); setOpen(true) }
 
   const invalidate = () => qc.invalidateQueries({ queryKey: queryKeys.programmes })
 

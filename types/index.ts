@@ -14,10 +14,12 @@ export interface PaginatedResponse<T> {
 }
 
 // ── Institution ───────────────────────────────────────────────────────────
-export interface Institution {`n  code?: string;`n  logo_url?: string;
+export interface Institution {
   id: string;
   name: string;
   short_name: string;
+  code?: string;
+  logo_url?: string;
   country: string;
   timezone: string;
   days_of_week: string[];
@@ -31,9 +33,10 @@ export interface Department {
   code: string;
   name: string;
   hod: string;
+  head_of_department?: string;
   email: string;
   is_active: boolean;
-  institution_id: string;   // UUID — used when creating/editing trainers
+  institution_id: string;
 }
 
 // ── Programme ─────────────────────────────────────────────────────────────
@@ -41,14 +44,16 @@ export type ProgrammeLevel =
   | 'CERT' | 'DIP' | 'HDIP' | 'DEG'
   | 'PG_DIP' | 'MASTERS' | 'PHD' | 'OTHER';
 
-export interface Programme {`n  duration_terms?: number;`n  nqf_level?: number;
+export interface Programme {
   id: string;
   code: string;
   name: string;
-  level: string;            // display value e.g. "Diploma"
-  department: string;       // string representation e.g. "ICT – Computer Science"
-  department_id: string;    // UUID — for write operations
+  level: string;
+  department: string;
+  department_id: string;
   total_terms: number;
+  duration_terms?: number;
+  nqf_level?: number;
   sharing_group: string;
   is_active: boolean;
 }
@@ -59,12 +64,12 @@ export type UnitType = 'CORE' | 'ELECTIVE' | 'PRACTICAL' | 'PROJECT';
 export interface CurriculumUnit {
   id: string;
   programme_code: string;
-  programme_id: string;     // UUID — for write operations
+  programme_id: string;
   term_number: number;
   position: number;
   code: string;
   name: string;
-  unit_type: string;        // display value e.g. "Core"
+  unit_type: string;
   credit_hours: number;
   periods_per_week: number;
   is_outsourced: boolean;
@@ -74,12 +79,15 @@ export interface CurriculumUnit {
 }
 
 // ── Period ────────────────────────────────────────────────────────────────
-export interface Period {`n  start?: string;`n  end?: string;`n  duration?: number;
+export interface Period {
   id: string;
-  institution: string;      // UUID
+  institution: string;
   label: string;
-  start_time: string;       // "08:00:00"
-  end_time: string;         // "09:00:00"
+  start_time: string;
+  end_time: string;
+  start?: string;
+  end?: string;
+  duration?: number;
   order: number;
   is_break: boolean;
   duration_hours: number;
@@ -92,7 +100,7 @@ export type RoomType =
 
 export interface Room {
   id: string;
-  institution: string;      // UUID
+  institution: string;
   code: string;
   name: string;
   room_type: RoomType;
@@ -107,9 +115,9 @@ export interface Room {
 // ── Term ──────────────────────────────────────────────────────────────────
 export interface Term {
   id: string;
-  institution: string;      // UUID
+  institution: string;
   name: string;
-  start_date: string;       // "2026-01-06"
+  start_date: string;
   end_date: string;
   teaching_weeks: number;
   is_current: boolean;
@@ -128,14 +136,11 @@ export interface Trainer {
   last_name: string;
   email: string;
   phone: string;
-  // Read serializer returns these as display strings
-  department: string;           // e.g. "ICT – Computer Science"
-  employment_type: string;      // display e.g. "Full-time"
-  // These are NOT returned by the read serializer — needed for write operations
-  // Derive department_id by matching dept name from the departments list
-  department_id?: string;       // UUID — populate from departments list on edit
-  institution_id?: string;      // UUID — populate from departments list on edit
-  employment_type_code?: EmploymentType; // raw code — derive from employment_type display
+  department: string;
+  employment_type: string;
+  department_id?: string;
+  institution_id?: string;
+  employment_type_code?: EmploymentType;
   max_periods_per_week: number;
   is_outsourced: boolean;
   available_days: string[];
@@ -154,8 +159,8 @@ export interface CohortProgress {
 export interface Cohort {
   id: string;
   name: string;
-  programme: string;        // string representation
-  programme_id?: string;    // UUID — for write operations
+  programme: string;
+  programme_id?: string;
   start_year: number;
   start_month: number;
   current_term: number;
@@ -183,7 +188,7 @@ export interface ScheduledUnit {
   day: DayCode;
   period: string;
   period_label: string;
-  sequence: number;         // 0=single, 1=first of pair, 2=second of pair
+  sequence: number;
   is_combined: boolean;
   combined_key: string;
   status: EntryStatus;
@@ -192,8 +197,8 @@ export interface ScheduledUnit {
 }
 
 // ── Conflict ──────────────────────────────────────────────────────────────
-export type ConflictSeverity   = 'HIGH' | 'MEDIUM' | 'LOW';
-export type ResolutionStatus   = 'PENDING' | 'RESOLVED' | 'OVERRIDDEN' | 'IGNORED';
+export type ConflictSeverity = 'HIGH' | 'MEDIUM' | 'LOW';
+export type ResolutionStatus = 'PENDING' | 'RESOLVED' | 'OVERRIDDEN' | 'IGNORED';
 
 export interface Conflict {
   id: string;
@@ -212,7 +217,8 @@ export interface Conflict {
   resolution_status: ResolutionStatus;
   resolved_by: string | null;
   resolved_at: string | null;
-  resolution_note: string;`n  involved_entries?: string[];
+  resolution_note: string;
+  involved_entries?: string[];
   created_at: string;
 }
 
@@ -297,7 +303,6 @@ export const DAY_SHORT: Record<string, string> = {
   THU: 'Thu', FRI: 'Fri', SAT: 'Sat', SUN: 'Sun',
 };
 
-// Maps employment_type display string → code for form pre-fill
 export const EMPLOYMENT_TYPE_CODE: Record<string, EmploymentType> = {
   'Full-time': 'FT',
   'Part-time': 'PT',
