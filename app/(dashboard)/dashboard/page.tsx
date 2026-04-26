@@ -1,5 +1,5 @@
 ﻿'use client'
-
+import { Users, BookOpen, Calendar, AlertTriangle } from 'lucide-react'
 import { useDashboard } from '@/hooks/useTimetable'
 import { useTermStore } from '@/store'
 import StatCard from '@/components/features/dashboard/StatCard'
@@ -19,10 +19,10 @@ export default function DashboardPage() {
       {isLoading && <div className='h-32 rounded-xl bg-gray-100 animate-pulse' />}
       {data && (
         <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
-          <StatCard label='Cohorts' value={data.cohorts ?? 0} />
-          <StatCard label='Trainers' value={data.trainers ?? 0} />
-          <StatCard label='Sessions' value={data.sessions ?? 0} />
-          <StatCard label='Conflicts' value={data.conflicts ?? 0} />
+          <StatCard label='Cohorts'   value={data.cohorts ?? 0}   icon={Users}          accent='blue' />
+          <StatCard label='Trainers'  value={data.trainers ?? 0}  icon={BookOpen}       accent='emerald' />
+          <StatCard label='Sessions'  value={data.sessions ?? 0}  icon={Calendar}       accent='amber' />
+          <StatCard label='Conflicts' value={data.conflicts ?? 0} icon={AlertTriangle}  accent='red' />
         </div>
       )}
       {data && <TermProgress data={data} />}
