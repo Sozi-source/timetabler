@@ -1,6 +1,7 @@
 ﻿import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Term, AuthUser } from '@/types'
+import { clearToken } from '@/lib/auth'
 
 // ── Auth Store ────────────────────────────────────────────────
 interface AuthState {
@@ -15,18 +16,25 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       token: null,
       user: null,
+
       setAuth: (token, user) => {
-        localStorage.setItem('timetabler_token', token)
+        // DO NOT write to localStorage here — saveToken() in login/page.tsx
+        // already handled it before setAuth is called. The persist middleware
+        // will also sync it. Triple-writing caused the race condition.
         set({ token, user })
       },
+
       logout: () => {
-        localStorage.removeItem('timetabler_token')
-        document.cookie = 'timetabler_token=; Max-Age=0; path=/'
+        clearToken() // clears localStorage + cookie in one call
         set({ token: null, user: null })
         window.location.href = '/login'
       },
     }),
-    { name: 'timetabler-auth' }
+    {
+      name: 'timetabler-auth',
+      // Only persist token + user — nothing else needed
+      partialize: (state) => ({ token: state.token, user: state.user }),
+    }
   )
 )
 

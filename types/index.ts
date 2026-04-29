@@ -264,10 +264,14 @@ export interface TrainerDashboardData {
 
 // ── Auth ──────────────────────────────────────────────────────────────────
 export interface AuthUser {
-  username: string;
-  email: string;
-  is_staff: boolean;
-  groups: string[];
+  id: number
+  username: string
+  first_name: string
+  last_name: string
+  email: string
+  role: string
+  is_staff?: boolean
+  groups?: string[]
 }
 
 // ── Query Keys ────────────────────────────────────────────────────────────

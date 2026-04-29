@@ -1,7 +1,6 @@
 ﻿'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store'
 import { saveToken } from '@/lib/auth'
 import api from '@/lib/api'
@@ -9,7 +8,8 @@ import type { AuthUser } from '@/types'
 import { Calendar, Loader2 } from 'lucide-react'
 
 export default function LoginPage() {
-  const router = useRouter()
+  // No useRouter — we use window.location.href after login to avoid
+  // racing Zustand's async persist flush (the root cause of the auth bug).
   const { setAuth } = useAuthStore()
 
   const [username, setUsername] = useState('')
@@ -23,35 +23,48 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      // 1. Get token
+      // Step 1 — Get token from Django
       const loginRes = await api.post('/auth/login/', { username, password })
-      const token: string = loginRes.data.token
+      const token: string = loginRes.data.data?.token ?? loginRes.data.token
 
-      // 2. Persist token to localStorage + cookie
+      // Step 2 — Write token to localStorage + cookie BEFORE anything else.
+      // The Axios interceptor reads localStorage on every request, so the
+      // next call (/auth/me/) will automatically be authenticated.
       saveToken(token)
 
-      // 3. Fetch user profile
+      // Step 3 — Fetch user profile (interceptor picks up token automatically)
       const meRes = await api.get<{ ok: boolean; data: AuthUser }>('/auth/me/')
       const user = meRes.data.data
 
-      // 4. Store in Zustand
+      // Step 4 — Commit to Zustand store (persist middleware syncs async)
       setAuth(token, user)
 
-      // 5. Route by role
-      router.push(user.is_staff || user.groups.includes('Coordinator')
-        ? '/dashboard'
-        : '/dashboard/trainer'
-      )
+      // Step 5 — Hard navigate via window.location.href, NOT router.push().
+      //
+      // router.push() is a client-side SPA transition — the new page shares
+      // the same JS runtime and may read Zustand before persist has flushed.
+      // window.location.href forces a full browser navigation: the new page
+      // boots fresh, reads from localStorage (already written in Step 2),
+      // and hydrates Zustand correctly. This eliminates the race condition.
+      const destination =
+        user.is_staff || user.role === "ADMIN" || (user.groups ?? []).includes('Coordinator')
+          ? '/dashboard'
+          : '/dashboard/trainer'
+
+      window.location.href = destination
+
+      // Note: do NOT call setLoading(false) on success — the page is
+      // navigating away, so keeping the spinner running gives better UX.
+
     } catch (err: unknown) {
       const msg =
-        (err as { response?: { data?: { error?: string; detail?: string } } })
+        (err as { response?: { data?: { error?: string } } })
           ?.response?.data?.error ??
         (err as { response?: { data?: { detail?: string } } })
           ?.response?.data?.detail ??
         'Invalid credentials'
       setError(msg)
-    } finally {
-      setLoading(false)
+      setLoading(false) // only reset loading on failure
     }
   }
 
@@ -122,3 +135,8 @@ export default function LoginPage() {
     </div>
   )
 }
+
+
+
+
+

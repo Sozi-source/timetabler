@@ -1,6 +1,7 @@
 ﻿/**
- * After login, write token to both localStorage (for Axios)
- * and a cookie (for the middleware edge runtime).
+ * After login, write token to both localStorage (for Axios interceptor)
+ * and a cookie (for middleware / edge runtime).
+ * This is the single source of truth for raw token persistence.
  */
 export function saveToken(token: string) {
   if (typeof window === 'undefined') return

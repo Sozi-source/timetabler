@@ -1,4 +1,7 @@
-﻿import Sidebar from './Sidebar'
+﻿'use client'
+
+import { useState } from 'react'
+import Sidebar from './Sidebar'
 import Topbar from './Topbar'
 
 interface AppShellProps {
@@ -7,12 +10,14 @@ interface AppShellProps {
 }
 
 export default function AppShell({ children, title }: AppShellProps) {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar />
-      <div className="pl-60">
-        <Topbar title={title} />
-        <main className="p-6">{children}</main>
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="lg:pl-60">
+        <Topbar title={title} onMenuClick={() => setSidebarOpen(true)} />
+        <main className="p-4 lg:p-6">{children}</main>
       </div>
     </div>
   )
