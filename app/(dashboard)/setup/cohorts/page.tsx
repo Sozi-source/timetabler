@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -46,13 +46,13 @@ export default function CohortsPage() {
   function openEdit(c: Cohort) {
     setEditing(c)
     setForm({
-      name:         c.name ?? '',
-      programme:    c.programme_id ?? '',
-      current_term: c.current_term ?? 1,
-      start_year:   c.start_year ?? new Date().getFullYear(),
-      start_month:  c.start_month ?? 1,
+      name:          c.name ?? '',
+      programme:     c.programme_id ?? '',
+      current_term:  c.current_term ?? 1,
+      start_year:    c.start_year ?? new Date().getFullYear(),
+      start_month:   c.start_month ?? 1,
       student_count: c.student_count ?? 0,
-      is_active:    c.is_active ?? true,
+      is_active:     c.is_active ?? true,
     })
     setOpen(true)
   }
@@ -68,7 +68,7 @@ export default function CohortsPage() {
   const saveMutation = useMutation({
     mutationFn: () => editing
       ? api.put(`/cohorts/${editing.id}/`, form).then(r => r.data)
-      : api.post('/cohorts/', form).then(r => r.data),
+      : api.post('/cohorts/', { ...form, programme_id: form.programme }).then(r => r.data),
     onSuccess: res => {
       if (res.ok) {
         toast.success(editing ? 'Cohort updated' : 'Cohort created')
