@@ -164,6 +164,8 @@ export interface Cohort {
   start_year: number;
   start_month: number;
   current_term: number;
+  computed_current_term?: number;
+  term_is_synced?: boolean;
   student_count: number;
   is_active: boolean;
   progress: CohortProgress;
