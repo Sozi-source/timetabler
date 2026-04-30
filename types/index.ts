@@ -246,15 +246,40 @@ export interface Constraint {
 
 // ── Dashboard ─────────────────────────────────────────────────────────────
 export interface DashboardData {
-  term: Term | null;
-  total_cohorts: number;
-  total_trainers: number;
-  total_rooms: number;
-  scheduled_units: number;
-  published_units: number;
-  pending_conflicts: number;
-  week_number: number;
-  weeks_remaining: number;
+  institution: string;
+  term: {
+    id: string;
+    name: string;
+    teaching_weeks: number;
+    current_week: number;
+    week_number: number;
+    weeks_remaining: number;
+    published: number;
+    drafts: number;
+    is_current: boolean;
+    start_date: string;
+    end_date: string;
+    institution: string;
+    conflicts: { pending: number; resolved: number; total: number };
+  } | null;
+  cohorts: number;
+  trainers: number;
+  rooms: number;
+  programmes: number;
+  trainer_workload: {
+    id: string;
+    name: string;
+    department: string;
+    periods_scheduled: number;
+    max_periods: number;
+    load_pct: number;
+  }[];
+  recent_activity: {
+    action: string;
+    by: string;
+    at: string;
+    note: string;
+  }[];
 }
 
 export interface TrainerDashboardData {

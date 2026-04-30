@@ -1,11 +1,15 @@
-﻿import type { Term } from '@/types'
+﻿import type { DashboardData } from '@/types'
 
-export default function TermProgress({ term }: { term: Term }) {
+type DashboardTerm = NonNullable<DashboardData['term']>
+
+export default function TermProgress({ term }: { term: DashboardTerm }) {
   const pct = term.teaching_weeks > 0
     ? Math.min(100, Math.round(
         ((term.teaching_weeks - term.weeks_remaining) / term.teaching_weeks) * 100
       ))
     : 0
+
+  const weekNum = term.current_week ?? term.week_number ?? 0
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -13,12 +17,14 @@ export default function TermProgress({ term }: { term: Term }) {
         <div>
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Active term</p>
           <p className="mt-1 text-lg font-bold text-gray-900">{term.name}</p>
-          <p className="text-xs text-gray-400 mt-0.5">{term.start_date} — {term.end_date}</p>
+          {term.start_date && (
+            <p className="text-xs text-gray-400 mt-0.5">{term.start_date} — {term.end_date}</p>
+          )}
         </div>
         <div className="flex gap-6">
           <div className="text-right">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Week</p>
-            <p className="text-2xl font-bold text-[#1e3a5f] mt-1">{term.week_number}</p>
+            <p className="text-2xl font-bold text-[#1e3a5f] mt-1">{weekNum}</p>
             <p className="text-xs text-gray-400">of {term.teaching_weeks}</p>
           </div>
           <div className="text-right">
@@ -41,9 +47,9 @@ export default function TermProgress({ term }: { term: Term }) {
         />
       </div>
       <div className="mt-1.5 flex justify-between text-xs text-gray-400">
-        <span>{term.start_date}</span>
+        <span>{term.start_date ?? ''}</span>
         <span>{pct}% complete</span>
-        <span>{term.end_date}</span>
+        <span>{term.end_date ?? ''}</span>
       </div>
     </div>
   )

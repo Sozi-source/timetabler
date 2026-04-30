@@ -105,16 +105,17 @@ export default function DashboardPage() {
   }
 
   const {
-    term,
-    total_cohorts,
-    total_trainers,
-    total_rooms,
-    scheduled_units,
-    published_units,
-    pending_conflicts,
-  } = data
+  term,
+  cohorts: total_cohorts,
+  trainers: total_trainers,
+  rooms: total_rooms,
+} = data
+const scheduled_units = (term?.published ?? 0) + (term?.drafts ?? 0)
+const published_units = term?.published ?? 0
+const pending_conflicts = term?.conflicts?.pending ?? 0
+const draftUnits = term?.drafts ?? 0
 
-  const draftUnits = scheduled_units - published_units
+ 
 
   return (
     <div className="space-y-4">
