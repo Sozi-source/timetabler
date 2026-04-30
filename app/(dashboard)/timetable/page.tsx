@@ -103,9 +103,9 @@ function TimetableCell({
           )}
         >
           <p className="font-semibold text-gray-800 truncate">{entry.unit_name}</p>
-          <p className="text-gray-500 truncate">{entry.cohort.name}</p>
-          {entry.trainer && <p className="text-gray-400 truncate">{entry.trainer ? `${entry.trainer.first_name} ${entry.trainer.last_name}` : null}</p>}
-          {entry.room    && <p className="text-gray-400 truncate">{entry.room?.name}</p>}
+          <p className="text-gray-500 truncate">{typeof entry.cohort === 'string' ? entry.cohort : entry.cohort?.name}</p>
+          {entry.trainer && <p className="text-gray-400 truncate">{typeof entry.trainer === 'object' ? `${entry.trainer.first_name} ${entry.trainer.last_name}` : entry.trainer}</p>}
+          {entry.room && <p className="text-gray-400 truncate">{typeof entry.room === 'object' ? (entry.room?.name ?? entry.room?.code) : entry.room}</p>}
         </button>
       ))}
     </div>
