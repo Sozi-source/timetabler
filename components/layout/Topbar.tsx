@@ -1,11 +1,12 @@
 ﻿'use client'
-
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTermStore } from '@/store'
 import { queryKeys } from '@/types'
 import { getTerms } from '@/services/setup'
 import { useEffect } from 'react'
-import { Menu } from 'lucide-react'
+import { Menu, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import api from '@/lib/api'
 import type { Term } from '@/types'
 
 interface TopbarProps {
@@ -14,18 +15,45 @@ interface TopbarProps {
 }
 
 export default function Topbar({ title, onMenuClick }: TopbarProps) {
+  const qc = useQueryClient()
   const { activeTerm, setActiveTerm } = useTermStore()
   const { data: terms = [] } = useQuery({
     queryKey: queryKeys.terms,
     queryFn: getTerms,
   })
 
+  // Auto-select current term on first load
   useEffect(() => {
     if (!activeTerm && terms.length > 0) {
       const current = terms.find((t: Term) => t.is_current) ?? terms[0]
       setActiveTerm(current)
     }
   }, [terms, activeTerm, setActiveTerm])
+
+  // Mutation: set a term as current in the DB
+  const switchMutation = useMutation({
+    mutationFn: (termId: string) =>
+      api.put(`/terms/${termId}/`, { is_current: true }).then(r => r.data),
+    onSuccess: (res, termId) => {
+      if (res.ok) {
+        const t = terms.find((t: Term) => t.id === termId)
+        if (t) {
+          setActiveTerm({ ...t, is_current: true })
+          toast.success(`Switched to ${t.name}`)
+        }
+        qc.invalidateQueries({ queryKey: queryKeys.terms })
+        qc.invalidateQueries({ queryKey: queryKeys.dashboard })
+      } else {
+        toast.error(res.error ?? 'Failed to switch term')
+      }
+    },
+    onError: () => toast.error('Network error — could not switch term'),
+  })
+
+  function handleTermChange(termId: string) {
+    if (termId === activeTerm?.id) return
+    switchMutation.mutate(termId)
+  }
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 lg:px-6">
@@ -36,26 +64,31 @@ export default function Topbar({ title, onMenuClick }: TopbarProps) {
         >
           <Menu className="h-5 w-5" />
         </button>
-        <h1 className="text-base font-semibold text-gray-900 lg:text-lg">{title ?? 'Timetabler'}</h1>
+        <h1 className="text-base font-semibold text-gray-900 lg:text-lg">
+          {title ?? 'Timetabler'}
+        </h1>
       </div>
 
       <div className="flex items-center gap-2 lg:gap-3">
         <div className="flex items-center gap-1.5 lg:gap-2">
           <label className="hidden text-xs text-gray-500 font-medium sm:block">Term</label>
-          <select
-            value={activeTerm?.id ?? ''}
-            onChange={(e) => {
-              const t = terms.find((t: Term) => t.id === e.target.value)
-              if (t) setActiveTerm(t)
-            }}
-            className="rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] lg:px-3 lg:text-sm"
-          >
-            {terms.map((t: Term) => (
-              <option key={t.id} value={t.id}>
-                {t.name} {t.is_current ? '(current)' : ''}
-              </option>
-            ))}
-          </select>
+
+          {switchMutation.isPending
+            ? <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+            : (
+              <select
+                value={activeTerm?.id ?? ''}
+                onChange={e => handleTermChange(e.target.value)}
+                className="rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] lg:px-3 lg:text-sm"
+              >
+                {terms.map((t: Term) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name} {t.is_current ? '✓' : ''}
+                  </option>
+                ))}
+              </select>
+            )
+          }
         </div>
 
         {activeTerm && (
