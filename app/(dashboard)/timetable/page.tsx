@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
@@ -103,7 +103,7 @@ function TimetableCell({
           )}
         >
           <p className="font-semibold text-gray-800 truncate">{entry.unit_name}</p>
-          <p className="text-gray-500 truncate">{typeof entry.cohort === 'string' ? entry.cohort : entry.cohort?.name}</p>
+          <p className="text-gray-500 truncate">{(entry as any).cohort_name ?? (typeof entry.cohort === 'string' ? entry.cohort : entry.cohort?.name)}</p>
           {entry.trainer && <p className="text-gray-400 truncate">{typeof entry.trainer === 'object' ? `${entry.trainer.first_name} ${entry.trainer.last_name}` : entry.trainer}</p>}
           {entry.room && <p className="text-gray-400 truncate">{typeof entry.room === 'object' ? (entry.room?.name ?? entry.room?.code) : entry.room}</p>}
         </button>
@@ -206,7 +206,7 @@ export default function TimetablePage() {
       if (Array.isArray(periodEntries)) allEntries.push(...periodEntries)
     }
   }
-  const cohorts = Array.from(new Map(allEntries.map(e => [e.cohort.id, e.cohort])).values())
+  const cohorts = Array.from(new Map(allEntries.map(e => [e.cohort_id ?? (e.cohort as any)?.id ?? e.cohort, { id: e.cohort_id ?? e.cohort, name: (e.cohort as any)?.name ?? e.cohort }])).values())
 
   // Build filtered grid
   const filteredGrid: Record<string, Record<string, ScheduledUnit[]>> = {}
@@ -216,7 +216,7 @@ export default function TimetablePage() {
       const entries = grid[day]?.[period.id] ?? []
       filteredGrid[day][period.id] = selectedCohort === 'ALL'
         ? entries
-        : entries.filter(e => e.cohort.id === selectedCohort)
+        : entries.filter(e => (e.cohort_id ?? (e.cohort as any)?.id ?? e.cohort) === selectedCohort)
     }
   }
 

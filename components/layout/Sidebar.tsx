@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Calendar, AlertTriangle,
   Settings2, Building2, LogOut, X, Menu,
+  BookOpen,
 } from 'lucide-react'
 import { useAuthStore } from '@/store'
 import { cn } from '@/lib/utils'
@@ -39,6 +40,7 @@ const NAV = [
       { href: '/setup/trainers',    icon: Building2, label: 'Trainers' },
       { href: '/setup/terms',       icon: Building2, label: 'Terms' },
       { href: '/setup/cohorts',     icon: Building2, label: 'Cohorts' },
+      { href: "/setup/units-on-offer", label: "Units on Offer", icon: BookOpen }
     ],
   },
 ]
