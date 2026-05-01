@@ -14,12 +14,19 @@ import {
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface ScheduledUnit {
   id: string
-  cohort: { id: string; name: string }
-  unit_code: string; unit_name: string
-  trainer: { id: string; first_name: string; last_name: string } | null
-  room: { id: string; name: string; code: string } | null
+  cohort: string
+  cohort_id: string
+  unit_code: string
+  unit_name: string
+  trainer: string | null
+  trainer_id: string | null
+  room: string | null
+  room_id: string | null
+  room_capacity: number | null
   day: string
-  period: { id: string; label: string; order: number }
+  period_label: string
+  period_id: string
+  is_combined: boolean
   status: 'DRAFT' | 'PUBLISHED'
 }
 
