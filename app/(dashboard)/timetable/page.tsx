@@ -6,30 +6,13 @@ import { useTermStore } from '@/store'
 import api from '@/lib/api'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import type { ScheduledUnit, Conflict } from '@/types'
 import {
   Calendar, RefreshCw, Send, AlertTriangle,
   Clock, Users, BookOpen, Home, Loader2, Trash2,
 } from 'lucide-react'
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-interface ScheduledUnit {
-  id: string
-  cohort: string
-  cohort_id: string
-  unit_code: string
-  unit_name: string
-  trainer: string | null
-  trainer_id: string | null
-  room: string | null
-  room_id: string | null
-  room_capacity: number | null
-  day: string
-  period_label: string
-  period_id: string
-  is_combined: boolean
-  status: 'DRAFT' | 'PUBLISHED'
-}
-
+// ── Local Types ───────────────────────────────────────────────────────────────
 interface PeriodMeta {
   id: string
   label: string
@@ -45,33 +28,23 @@ interface TimetableResponse {
   status: string
 }
 
-interface Conflict {
-  id: string
-  type: string
-  severity: 'HIGH' | 'MEDIUM' | 'LOW'
-  description: string
-  unit: string | null
-  cohort: string | null
-}
-
 // ── Constants ─────────────────────────────────────────────────────────────────
 const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI']
 const DAY_LABELS: Record<string, string> = {
-  MON: 'Monday', TUE: 'Tuesday', WED: 'Wednesday', THU: 'Thursday', FRI: 'Friday'
+  MON: 'Monday', TUE: 'Tuesday', WED: 'Wednesday', THU: 'Thursday', FRI: 'Friday',
 }
 
 // ── API helpers ───────────────────────────────────────────────────────────────
-// Backend returns: { grid: { MON: { <period_id>: [entry,...] } }, periods: [...], days: [...] }
 const fetchTimetable = (termId: string, status: string): Promise<TimetableResponse> =>
   api.get(`/timetable/master/?term=${termId}&status=${status}`).then(r => {
     const d = r.data?.data ?? r.data ?? {}
     return {
-      grid:         d.grid         ?? {},
-      periods:      d.periods      ?? [],
-      days:         d.days         ?? DAYS,
+      grid:          d.grid          ?? {},
+      periods:       d.periods       ?? [],
+      days:          d.days          ?? DAYS,
       total_entries: d.total_entries ?? 0,
-      term:         d.term         ?? '',
-      status:       d.status       ?? status,
+      term:          d.term          ?? '',
+      status:        d.status        ?? status,
     }
   })
 
@@ -81,7 +54,7 @@ const fetchConflicts = (termId: string): Promise<Conflict[]> =>
     return Array.isArray(d) ? d : []
   })
 
-// ── Grid cell ─────────────────────────────────────────────────────────────────
+// ── Grid Cell ─────────────────────────────────────────────────────────────────
 function TimetableCell({
   entries,
   onClick,
@@ -96,6 +69,7 @@ function TimetableCell({
       </div>
     )
   }
+
   return (
     <div className="flex flex-col gap-1">
       {entries.map(entry => (
@@ -110,16 +84,20 @@ function TimetableCell({
           )}
         >
           <p className="font-semibold text-gray-800 truncate">{entry.unit_name}</p>
-          <p className="text-gray-500 truncate">{(entry as any).cohort_name ?? (typeof entry.cohort === 'string' ? entry.cohort : entry.cohort?.name)}</p>
-          {entry.trainer && <p className="text-gray-400 truncate">{typeof entry.trainer === 'object' ? `${entry.trainer.first_name} ${entry.trainer.last_name}` : entry.trainer}</p>}
-          {entry.room && <p className="text-gray-400 truncate">{typeof entry.room === 'object' ? (entry.room?.name ?? entry.room?.code) : entry.room}</p>}
+          <p className="text-gray-500 truncate">{entry.cohort_name ?? entry.cohort}</p>
+          {entry.trainer_name && (
+            <p className="text-gray-400 truncate">{entry.trainer_name}</p>
+          )}
+          {entry.room_code && (
+            <p className="text-gray-400 truncate">{entry.room_code}</p>
+          )}
         </button>
       ))}
     </div>
   )
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────────
+// ── Main Page ─────────────────────────────────────────────────────────────────
 export default function TimetablePage() {
   const router = useRouter()
   const qc = useQueryClient()
@@ -129,7 +107,7 @@ export default function TimetablePage() {
   const [selectedCohort, setSelectedCohort] = useState<string>('ALL')
   const [viewStatus, setViewStatus] = useState<'DRAFT' | 'PUBLISHED'>('DRAFT')
 
-  // ── Queries ──────────────────────────────────────────────────────────────────
+  // ── Queries ───────────────────────────────────────────────────────────────
   const { data: ttData, isLoading, error } = useQuery({
     queryKey: ['timetable', termId, viewStatus],
     queryFn: () => fetchTimetable(termId, viewStatus),
@@ -140,16 +118,17 @@ export default function TimetablePage() {
   // If current status has nothing, try the other one
   const otherStatus = viewStatus === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED'
   const isEmpty = !ttData || ttData.total_entries === 0
+
   const { data: fallbackData } = useQuery({
     queryKey: ['timetable', termId, otherStatus],
     queryFn: () => fetchTimetable(termId, otherStatus),
     enabled: !!termId && !isLoading && isEmpty,
   })
 
-  const display = (isEmpty && fallbackData?.total_entries) ? fallbackData : ttData
-  const grid    = display?.grid    ?? {}
-  const periods = display?.periods ?? []
-  const days    = display?.days    ?? DAYS
+  const display  = isEmpty && fallbackData?.total_entries ? fallbackData : ttData
+  const grid     = display?.grid    ?? {}
+  const periods  = display?.periods ?? []
+  const days     = display?.days    ?? DAYS
 
   const { data: conflicts = [] } = useQuery({
     queryKey: ['conflicts', termId],
@@ -158,7 +137,7 @@ export default function TimetablePage() {
   })
   const highConflicts = conflicts.filter(c => c.severity === 'HIGH')
 
-  // ── Mutations ─────────────────────────────────────────────────────────────────
+  // ── Mutations ─────────────────────────────────────────────────────────────
   const generate = useMutation({
     mutationFn: () => api.post('/timetable/generate/', { term_id: termId }),
     onSuccess: () => {
@@ -189,7 +168,7 @@ export default function TimetablePage() {
         qc.invalidateQueries({ queryKey: ['timetable', termId] })
       } else if (status === 409) {
         toast.error(`${msg}`, {
-          action: { label: 'Force publish', onClick: () => publish.mutate(true as any) },
+          action: { label: 'Force publish', onClick: () => publish.mutate(true) },
         })
       } else {
         toast.error(msg)
@@ -206,14 +185,22 @@ export default function TimetablePage() {
     onError: () => toast.error('Failed to clear drafts'),
   })
 
-  // ── Derived — cohort filter ───────────────────────────────────────────────────
+  // ── Derived — cohort filter ───────────────────────────────────────────────
   const allEntries: ScheduledUnit[] = []
   for (const dayGrid of Object.values(grid)) {
     for (const periodEntries of Object.values(dayGrid)) {
       if (Array.isArray(periodEntries)) allEntries.push(...periodEntries)
     }
   }
-  const cohorts = Array.from(new Map(allEntries.map(e => [e.cohort_id ?? (e.cohort as any)?.id ?? e.cohort, { id: e.cohort_id ?? e.cohort, name: (e.cohort as any)?.name ?? e.cohort }])).values())
+
+  const cohorts = Array.from(
+    new Map(
+      allEntries.map(e => [
+        e.cohort,
+        { id: e.cohort, name: e.cohort_name ?? e.cohort },
+      ])
+    ).values()
+  )
 
   // Build filtered grid
   const filteredGrid: Record<string, Record<string, ScheduledUnit[]>> = {}
@@ -221,13 +208,14 @@ export default function TimetablePage() {
     filteredGrid[day] = {}
     for (const period of periods) {
       const entries = grid[day]?.[period.id] ?? []
-      filteredGrid[day][period.id] = selectedCohort === 'ALL'
-        ? entries
-        : entries.filter(e => (e.cohort_id ?? (e.cohort as any)?.id ?? e.cohort) === selectedCohort)
+      filteredGrid[day][period.id] =
+        selectedCohort === 'ALL'
+          ? entries
+          : entries.filter(e => e.cohort === selectedCohort)
     }
   }
 
-  // ── No term ───────────────────────────────────────────────────────────────────
+  // ── No term ───────────────────────────────────────────────────────────────
   if (!termId) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-gray-400">
@@ -247,10 +235,13 @@ export default function TimetablePage() {
           <p className="text-sm text-gray-500 mt-0.5">
             {activeTerm?.name ?? 'Current Term'} · {display?.total_entries ?? 0} sessions
             {display && display.status !== viewStatus && (
-              <span className="ml-2 text-amber-500">(showing {display.status.toLowerCase()})</span>
+              <span className="ml-2 text-amber-500">
+                (showing {display.status.toLowerCase()})
+              </span>
             )}
           </p>
         </div>
+
         <div className="flex items-center gap-2 flex-wrap">
           {/* Status toggle */}
           <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
@@ -283,16 +274,20 @@ export default function TimetablePage() {
             disabled={generate.isPending}
             className="flex items-center gap-1.5 px-4 py-2 text-sm border border-[#1e3a5f] text-[#1e3a5f] rounded-lg hover:bg-blue-50 font-medium disabled:opacity-50"
           >
-            {generate.isPending ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+            {generate.isPending
+              ? <Loader2 size={14} className="animate-spin" />
+              : <RefreshCw size={14} />}
             Generate
           </button>
 
           <button
-            onClick={() => publish.mutate(false as any)}
+            onClick={() => publish.mutate(false)}
             disabled={publish.isPending}
             className="flex items-center gap-1.5 px-4 py-2 text-sm bg-[#1e3a5f] text-white rounded-lg hover:bg-[#162d4a] font-medium disabled:opacity-50"
           >
-            {publish.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+            {publish.isPending
+              ? <Loader2 size={14} className="animate-spin" />
+              : <Send size={14} />}
             Publish
           </button>
         </div>
@@ -357,7 +352,9 @@ export default function TimetablePage() {
           <Loader2 size={32} className="animate-spin text-[#1e3a5f]" />
         </div>
       ) : error ? (
-        <div className="text-center py-16 text-red-500 text-sm">Failed to load timetable.</div>
+        <div className="text-center py-16 text-red-500 text-sm">
+          Failed to load timetable.
+        </div>
       ) : (display?.total_entries ?? 0) === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 gap-4 text-gray-400">
           <Calendar size={48} className="opacity-30" />
@@ -370,7 +367,9 @@ export default function TimetablePage() {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
                 <th className="p-3 text-left text-xs font-semibold text-gray-500 w-36 border-r border-gray-100">
-                  <div className="flex items-center gap-1.5"><Clock size={12} /> Period</div>
+                  <div className="flex items-center gap-1.5">
+                    <Clock size={12} /> Period
+                  </div>
                 </th>
                 {days.map(day => (
                   <th key={day} className="p-3 text-center text-xs font-semibold text-gray-700">
@@ -403,14 +402,14 @@ export default function TimetablePage() {
       {/* Legend */}
       <div className="flex items-center gap-4 text-xs text-gray-400">
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-blue-100 border border-blue-200 inline-block" /> Draft
+          <span className="w-3 h-3 rounded bg-blue-100 border border-blue-200 inline-block" />
+          Draft
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-emerald-100 border border-emerald-200 inline-block" /> Published
+          <span className="w-3 h-3 rounded bg-emerald-100 border border-emerald-200 inline-block" />
+          Published
         </span>
       </div>
     </div>
   )
 }
-
-
