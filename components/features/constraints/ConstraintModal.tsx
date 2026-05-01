@@ -1,12 +1,11 @@
 ﻿'use client'
-
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/types'
 import type { Constraint } from '@/types'
 import { createConstraint, updateConstraint } from '@/services/setup'
 import { toast } from 'sonner'
-import { X, Loader2 } from 'lucide-react'
+import { X, Loader2, Pin, Ban, Home } from 'lucide-react'
 import api from '@/lib/api'
 
 const DAYS = [
@@ -15,6 +14,33 @@ const DAYS = [
   { value: 'WED', label: 'Wed' },
   { value: 'THU', label: 'Thu' },
   { value: 'FRI', label: 'Fri' },
+]
+
+const RULES = [
+  {
+    value: 'PIN_DAY_PERIOD',
+    label: 'Fix to Day & Session',
+    icon: Pin,
+    description: 'Unit is always scheduled on this exact day and session',
+    color: 'bg-blue-50 border-blue-200 text-blue-800',
+    activeColor: 'bg-[#1e3a5f] border-[#1e3a5f] text-white',
+  },
+  {
+    value: 'AVOID_DAY',
+    label: 'Avoid Day',
+    icon: Ban,
+    description: 'Scheduler will never place this unit on the selected day(s)',
+    color: 'bg-red-50 border-red-200 text-red-800',
+    activeColor: 'bg-red-600 border-red-600 text-white',
+  },
+  {
+    value: 'PREFERRED_ROOM',
+    label: 'Preferred Room',
+    icon: Home,
+    description: 'Scheduler prefers this room when placing the unit',
+    color: 'bg-teal-50 border-teal-200 text-teal-800',
+    activeColor: 'bg-teal-600 border-teal-600 text-white',
+  },
 ]
 
 interface Props {
@@ -41,14 +67,16 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
   const qc     = useQueryClient()
   const isEdit = !!constraint
 
-  const [name,      setName]      = useState('')
-  const [unitId,    setUnitId]    = useState('')
-  const [day,       setDay]       = useState('')
-  const [periodId,  setPeriodId]  = useState('')
-  const [isActive,  setIsActive]  = useState(true)
-  const [roomId,    setRoomId]    = useState('')
+  const [name,       setName]       = useState('')
+  const [rule,       setRule]       = useState<'PIN_DAY_PERIOD' | 'AVOID_DAY' | 'PREFERRED_ROOM'>('PIN_DAY_PERIOD')
+  const [unitId,     setUnitId]     = useState('')
+  const [day,        setDay]        = useState('')
+  const [avoidDays,  setAvoidDays]  = useState<string[]>([])
+  const [periodId,   setPeriodId]   = useState('')
+  const [roomId,     setRoomId]     = useState('')
+  const [isActive,   setIsActive]   = useState(true)
 
-  // Fetch programmes then curriculum units
+  // Fetch programmes + curriculum units
   const { data: progsRaw } = useQuery({
     queryKey: queryKeys.programmes,
     queryFn:  () => api.get('/programmes/').then(r => r.data),
@@ -73,7 +101,7 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
     queryFn:  () => api.get('/periods/').then(r => r.data),
     enabled:  open,
   })
-  const periods = unwrap<AnyPeriod>(periodsRaw)
+  const periods = unwrap<AnyPeriod>(periodsRaw).filter((p: AnyPeriod & { is_break?: boolean }) => !p.is_break)
 
   // Fetch rooms
   const { data: roomsRaw } = useQuery({
@@ -90,39 +118,65 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
       const c = constraint as unknown as {
         name: string
         is_active: boolean
+        rule?: string
         curriculum_unit?: string
-        parameters?: { day?: string; period_id?: string; preferred_room?: string }
+        parameters?: {
+          day?: string
+          period_id?: string
+          preferred_room?: string
+          avoid_days?: string[]
+        }
       }
       setName(c.name)
+      setRule((c.rule as typeof rule) ?? 'PIN_DAY_PERIOD')
       setUnitId(c.curriculum_unit ?? '')
       setDay(c.parameters?.day ?? '')
+      setAvoidDays(c.parameters?.avoid_days ?? [])
       setPeriodId(c.parameters?.period_id ?? '')
       setRoomId(c.parameters?.preferred_room ?? '')
       setIsActive(c.is_active)
     } else {
-      setName(''); setUnitId(''); setDay(''); setPeriodId(''); setIsActive(true); setRoomId('')
+      setName(''); setRule('PIN_DAY_PERIOD'); setUnitId('')
+      setDay(''); setAvoidDays([]); setPeriodId(''); setRoomId(''); setIsActive(true)
     }
   }, [open, constraint])
 
-  const valid = name.trim() && unitId && day && periodId
+  function toggleAvoidDay(d: string) {
+    setAvoidDays(prev =>
+      prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d]
+    )
+  }
+
+  const valid =
+    name.trim() && unitId && (
+      rule === 'PIN_DAY_PERIOD'  ? (day && periodId) :
+      rule === 'AVOID_DAY'       ? avoidDays.length > 0 :
+      rule === 'PREFERRED_ROOM'  ? !!roomId : false
+    )
 
   const mutation = useMutation({
     mutationFn: () => {
+      const parameters =
+        rule === 'PIN_DAY_PERIOD' ? { day, period_id: periodId, ...(roomId ? { preferred_room: roomId } : {}) } :
+        rule === 'AVOID_DAY'      ? { avoid_days: avoidDays } :
+        rule === 'PREFERRED_ROOM' ? { preferred_room: roomId } :
+        {}
+
       const payload = {
         name,
         scope:           'UNIT',
-        rule:            'PIN_DAY_PERIOD',
-        is_hard:         true,
+        rule,
+        is_hard:         rule !== 'PREFERRED_ROOM',
         is_active:       isActive,
         curriculum_unit: unitId,
-        parameters:      { day, period_id: periodId, ...(roomId ? { preferred_room: roomId } : {}) },
+        parameters,
       }
       return isEdit
         ? updateConstraint(constraint!.id, payload)
         : createConstraint(payload)
     },
     onSuccess: (res) => {
-      if (res.ok) {
+      if ((res as { ok?: boolean }).ok !== false) {
         toast.success(isEdit ? 'Constraint updated' : 'Constraint saved')
         qc.invalidateQueries({ queryKey: queryKeys.constraints })
         onClose()
@@ -135,18 +189,19 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
 
   if (!open) return null
 
+  const selectedRule = RULES.find(r => r.value === rule)!
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
-
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
           <div>
             <h2 className="text-base font-bold text-gray-900">
-              {isEdit ? 'Edit Unit Constraint' : 'Fix Unit to Day & Session'}
+              {isEdit ? 'Edit Constraint' : 'Add Unit Constraint'}
             </h2>
             <p className="text-xs text-gray-400 mt-0.5">
-              The scheduler will always place this unit on the chosen day and session
+              {selectedRule.description}
             </p>
           </div>
           <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 transition-colors">
@@ -154,9 +209,40 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
           </button>
         </div>
 
-        <div className="px-6 py-5 space-y-4">
+        <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
 
-          {/* Name */}
+          {/* Rule type selector */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+              Constraint Type
+            </label>
+            <div className="flex flex-col gap-2">
+              {RULES.map(r => {
+                const Icon = r.icon
+                const active = rule === r.value
+                return (
+                  <button
+                    key={r.value}
+                    onClick={() => setRule(r.value as typeof rule)}
+                    className={[
+                      'flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-xs font-medium transition-all',
+                      active ? r.activeColor : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50',
+                    ].join(' ')}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <div>
+                      <p className="font-semibold">{r.label}</p>
+                      <p className={['text-[10px] mt-0.5', active ? 'opacity-80' : 'text-gray-400'].join(' ')}>
+                        {r.description}
+                      </p>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Label */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
               Label
@@ -186,63 +272,114 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
             </select>
           </div>
 
-          {/* Day */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-              Day
-            </label>
-            <div className="flex gap-2">
-              {DAYS.map(d => (
-                <button
-                  key={d.value}
-                  onClick={() => setDay(d.value)}
-                  className={[
-                    'flex-1 rounded-lg border py-2 text-xs font-semibold transition-all',
-                    day === d.value
-                      ? 'bg-[#1e3a5f] border-[#1e3a5f] text-white'
-                      : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50',
-                  ].join(' ')}
+          {/* PIN_DAY_PERIOD: Day + Session + optional room */}
+          {rule === 'PIN_DAY_PERIOD' && (
+            <>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                  Day
+                </label>
+                <div className="flex gap-2">
+                  {DAYS.map(d => (
+                    <button
+                      key={d.value}
+                      onClick={() => setDay(d.value)}
+                      className={[
+                        'flex-1 rounded-lg border py-2 text-xs font-semibold transition-all',
+                        day === d.value
+                          ? 'bg-[#1e3a5f] border-[#1e3a5f] text-white'
+                          : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50',
+                      ].join(' ')}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                  Session
+                </label>
+                <select
+                  value={periodId}
+                  onChange={e => setPeriodId(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] focus:border-transparent"
                 >
-                  {d.label}
-                </button>
-              ))}
+                  <option value="">{periods.length === 0 ? 'Loading sessions…' : 'Select session…'}</option>
+                  {periods.map(p => (
+                    <option key={p.id} value={p.id}>{p.label} ({p.start})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                  Preferred Room <span className="text-gray-300 font-normal normal-case">(optional)</span>
+                </label>
+                <select
+                  value={roomId}
+                  onChange={e => setRoomId(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] focus:border-transparent"
+                >
+                  <option value="">Any available room</option>
+                  {rooms.map(r => (
+                    <option key={r.id} value={r.id}>{r.code} — {r.name}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+
+          {/* AVOID_DAY: multi-day selector */}
+          {rule === 'AVOID_DAY' && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                Days to Avoid <span className="text-gray-400 font-normal normal-case">(select one or more)</span>
+              </label>
+              <div className="flex gap-2">
+                {DAYS.map(d => (
+                  <button
+                    key={d.value}
+                    onClick={() => toggleAvoidDay(d.value)}
+                    className={[
+                      'flex-1 rounded-lg border py-2 text-xs font-semibold transition-all',
+                      avoidDays.includes(d.value)
+                        ? 'bg-red-600 border-red-600 text-white'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50',
+                    ].join(' ')}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+              {avoidDays.length > 0 && (
+                <p className="text-xs text-red-500 mt-1">
+                  Unit will never be placed on: {avoidDays.join(', ')}
+                </p>
+              )}
             </div>
-          </div>
+          )}
 
-          {/* Period */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-              Session
-            </label>
-            <select
-              value={periodId}
-              onChange={e => setPeriodId(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] focus:border-transparent"
-            >
-              <option value="">{periods.length === 0 ? 'Loading sessions…' : 'Select session…'}</option>
-              {periods.map(p => (
-                <option key={p.id} value={p.id}>{p.label} ({p.start})</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Preferred Room (optional) */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-              Preferred Room <span className="text-gray-300 font-normal normal-case">(optional)</span>
-            </label>
-            <select
-              value={roomId}
-              onChange={e => setRoomId(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] focus:border-transparent"
-            >
-              <option value="">Any available room</option>
-              {rooms.map(r => (
-                <option key={r.id} value={r.id}>{r.code} — {r.name}</option>
-              ))}
-            </select>
-            <p className="text-xs text-gray-400 mt-1">Scheduler will prefer this venue when placing the unit</p>
-          </div>
+          {/* PREFERRED_ROOM: room selector */}
+          {rule === 'PREFERRED_ROOM' && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                Preferred Room
+              </label>
+              <select
+                value={roomId}
+                onChange={e => setRoomId(e.target.value)}
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] focus:border-transparent"
+              >
+                <option value="">Select room…</option>
+                {rooms.map(r => (
+                  <option key={r.id} value={r.id}>{r.code} — {r.name}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-400 mt-1">Scheduler will prefer this venue when placing the unit</p>
+            </div>
+          )}
 
           {/* Active toggle */}
           <label className="flex items-center gap-3 cursor-pointer pt-1">
@@ -263,7 +400,6 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
               {isActive ? 'Applied on next generate' : 'Ignored by scheduler'}
             </span>
           </label>
-
         </div>
 
         {/* Footer */}
@@ -279,11 +415,10 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
             disabled={mutation.isPending || !valid}
             className="flex items-center gap-2 rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#162d4a] disabled:opacity-50 transition-colors"
           >
-            {mutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-            {isEdit ? 'Save changes' : 'Save constraint'}
+            {mutation.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
+            {isEdit ? 'Update' : 'Save Constraint'}
           </button>
         </div>
-
       </div>
     </div>
   )
