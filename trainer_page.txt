@@ -1,0 +1,10 @@
+export const dynamic = 'force-dynamic'
+
+export default function TrainerTimetableListPage() {
+  return (
+    <div className="p-6">
+      <h1 className="text-xl font-semibold">Trainer Timetables</h1>
+      <p className="text-gray-500 mt-2">Select a trainer to view their timetable.</p>
+    </div>
+  )
+}
