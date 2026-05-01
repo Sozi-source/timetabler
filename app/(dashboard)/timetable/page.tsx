@@ -28,6 +28,11 @@ interface TimetableResponse {
   status: string
 }
 
+interface CohortOption {
+  id: string
+  name: string
+}
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI']
 const DAY_LABELS: Record<string, string> = {
@@ -52,6 +57,17 @@ const fetchConflicts = (termId: string): Promise<Conflict[]> =>
   api.get(`/conflicts/?term=${termId}`).then(r => {
     const d = r.data?.data ?? r.data ?? []
     return Array.isArray(d) ? d : []
+  })
+
+// Fetch ALL cohorts from the database — not derived from grid entries
+const fetchAllCohorts = (termId: string): Promise<CohortOption[]> =>
+  api.get(`/cohorts/`).then(r => {
+    const d = r.data?.data ?? r.data ?? []
+    const list = Array.isArray(d) ? d : (d.results ?? [])
+    return list.map((c: any) => ({
+      id:   c.id   ?? c.cohort_id ?? c.cohort,
+      name: c.name ?? c.cohort_name ?? c.id,
+    }))
   })
 
 // ── Grid Cell ─────────────────────────────────────────────────────────────────
@@ -137,6 +153,14 @@ export default function TimetablePage() {
   })
   const highConflicts = conflicts.filter(c => c.severity === 'HIGH')
 
+  // ── All cohorts from DB — always complete, never derived from grid ────────
+  const { data: allCohorts = [] } = useQuery({
+    queryKey: ['cohorts', termId],
+    queryFn: () => fetchAllCohorts(termId),
+    enabled: !!termId,
+    staleTime: 5 * 60 * 1000, // 5 min — cohorts rarely change mid-session
+  })
+
   // ── Mutations ─────────────────────────────────────────────────────────────
   const generate = useMutation({
     mutationFn: () => api.post('/timetable/generate/', { term_id: termId }),
@@ -145,6 +169,7 @@ export default function TimetablePage() {
       setViewStatus('DRAFT')
       qc.invalidateQueries({ queryKey: ['timetable', termId] })
       qc.invalidateQueries({ queryKey: ['conflicts', termId] })
+      // No need to invalidate cohorts — they don't change on generate
     },
     onError: (e: any) => toast.error(e.response?.data?.error ?? 'Generation failed'),
   })
@@ -185,24 +210,7 @@ export default function TimetablePage() {
     onError: () => toast.error('Failed to clear drafts'),
   })
 
-  // ── Derived — cohort filter ───────────────────────────────────────────────
-  const allEntries: ScheduledUnit[] = []
-  for (const dayGrid of Object.values(grid)) {
-    for (const periodEntries of Object.values(dayGrid)) {
-      if (Array.isArray(periodEntries)) allEntries.push(...periodEntries)
-    }
-  }
-
-  const cohorts = Array.from(
-    new Map(
-      allEntries.map(e => [
-        e.cohort,
-        { id: e.cohort, name: e.cohort_name ?? e.cohort },
-      ])
-    ).values()
-  )
-
-  // Build filtered grid
+  // ── Filtered grid — uses cohort ID to match entries ───────────────────────
   const filteredGrid: Record<string, Record<string, ScheduledUnit[]>> = {}
   for (const day of days) {
     filteredGrid[day] = {}
@@ -312,7 +320,7 @@ export default function TimetablePage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { icon: Calendar, label: 'Sessions',  value: display?.total_entries ?? 0 },
-          { icon: Users,    label: 'Cohorts',   value: cohorts.length },
+          { icon: Users,    label: 'Cohorts',   value: allCohorts.length },
           { icon: BookOpen, label: 'Conflicts', value: conflicts.length },
           { icon: Home,     label: 'Status',    value: display?.status ?? '—' },
         ].map(({ icon: Icon, label, value }) => (
@@ -325,11 +333,11 @@ export default function TimetablePage() {
         ))}
       </div>
 
-      {/* Cohort filter */}
-      {cohorts.length > 1 && (
+      {/* Cohort filter — sourced from DB, always shows all 13 */}
+      {allCohorts.length > 1 && (
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs text-gray-400">Filter:</span>
-          {[{ id: 'ALL', name: 'All' }, ...cohorts].map(c => (
+          {[{ id: 'ALL', name: 'All' }, ...allCohorts].map(c => (
             <button
               key={c.id}
               onClick={() => setSelectedCohort(c.id)}
