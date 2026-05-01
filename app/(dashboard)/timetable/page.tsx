@@ -120,7 +120,7 @@ export default function TimetablePage() {
   const termId = activeTerm?.id ?? ''
 
   const [selectedCohort, setSelectedCohort] = useState<string>('ALL')
-  const [viewStatus, setViewStatus] = useState<'DRAFT' | 'PUBLISHED'>('PUBLISHED')
+  const [viewStatus, setViewStatus] = useState<'DRAFT' | 'PUBLISHED'>('DRAFT')
 
   // ── Queries ──────────────────────────────────────────────────────────────────
   const { data: ttData, isLoading, error } = useQuery({
