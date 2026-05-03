@@ -25,7 +25,7 @@ export default function DashboardPage() {
   async function handleGenerate() {
     setBusy('generate')
     try {
-      await generateTimetable(activeTerm?.id)
+      if (!activeTerm?.id) return; await generateTimetable(activeTerm.id)
       toast.success('Timetable generated successfully')
       refetch()
     } catch {
@@ -38,7 +38,7 @@ export default function DashboardPage() {
   async function handlePublish() {
     setBusy('publish')
     try {
-      await publishTimetable(activeTerm?.id)
+      if (!activeTerm?.id) return; await publishTimetable(activeTerm.id)
       toast.success('Drafts published')
       refetch()
     } catch (err: unknown) {
@@ -59,7 +59,7 @@ export default function DashboardPage() {
     if (!confirm('Delete all draft entries? This cannot be undone.')) return
     setBusy('clear')
     try {
-      await deleteDrafts(activeTerm?.id)
+      if (!activeTerm?.id) return; await deleteDrafts(activeTerm.id)
       toast.success('Draft entries cleared')
       refetch()
     } catch {

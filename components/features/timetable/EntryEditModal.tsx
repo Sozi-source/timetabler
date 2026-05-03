@@ -31,8 +31,8 @@ export default function EntryEditModal({ entry, trainers, rooms, periods, onClos
 
   useEffect(() => {
     if (entry) {
-      setTrainerId(entry.trainer)
-      setRoomId(entry.room)
+      setTrainerId(entry.trainer ?? "")
+      setRoomId(entry.room ?? "")
       setPeriodId(entry.period)
       setDay(entry.day)
       setNotes(entry.notes ?? '')
@@ -47,20 +47,14 @@ export default function EntryEditModal({ entry, trainers, rooms, periods, onClos
   }
 
   const saveMutation = useMutation({
-    mutationFn: () => updateEntry(entry!.id, { trainer_id: trainerId, room_id: roomId, period_id: periodId, day, notes }),
-    onSuccess: (res) => {
-      if (res.ok) { toast.success('Entry updated'); invalidate(); onClose() }
-      else toast.error(res.error ?? 'Update failed')
-    },
+    mutationFn: () => updateEntry(entry!.id, { trainer: trainerId, room: roomId, period: periodId, day, notes }),
+    onSuccess: () => { toast.success('Entry updated'); invalidate(); onClose() },
     onError: () => toast.error('Network error'),
   })
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteEntry(entry!.id),
-    onSuccess: (res) => {
-      if (res.ok) { toast.success('Entry deleted'); invalidate(); onClose() }
-      else toast.error(res.error ?? 'Delete failed')
-    },
+    onSuccess: () => { toast.success('Entry deleted'); invalidate(); onClose() },
     onError: () => toast.error('Network error'),
   })
 

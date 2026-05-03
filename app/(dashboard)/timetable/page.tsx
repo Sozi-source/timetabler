@@ -1,6 +1,7 @@
 'use client'
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 import { useTermStore } from '@/store'
 import { useMasterTimetable } from '@/hooks/useTimetable'
 import {
@@ -17,7 +18,8 @@ import { toast } from 'sonner'
 import {
   RefreshCw, Trash2, Send, Loader2, Users, BookOpen,
   AlertTriangle, CheckCircle2, ChevronDown, XCircle,
-  ShieldCheck, X, ChevronRight,
+  ShieldCheck, X, ChevronRight, Zap, ExternalLink,
+  ChevronUp, AlertCircle, Info, ArrowRight,
 } from 'lucide-react'
 
 // ─────────────────────────────────────────────────────────────────
@@ -41,27 +43,27 @@ interface GenProgress {
 }
 
 interface ValidationIssue {
-  type:        string
-  cohort?:     string
-  unit_code?:  string
-  unit_name?:  string
-  trainer_name?: string
-  trainer_id?:   string
-  sole_units?:   [string, string][]
-  units_count?:  number
-  sessions_needed?: number
-  max_periods?:    number
-  students?:       number
+  type:               string
+  cohort?:            string
+  unit_code?:         string
+  unit_name?:         string
+  trainer_name?:      string
+  trainer_id?:        string
+  sole_units?:        [string, string][]
+  units_count?:       number
+  sessions_needed?:   number
+  max_periods?:       number
+  students?:          number
   max_room_capacity?: number
-  needed?:    number
-  available?: number
-  message:    string
+  needed?:            number
+  available?:         number
+  message:            string
 }
 
 interface ValidationResult {
-  blocking:      ValidationIssue[]
-  warnings:      ValidationIssue[]
-  can_generate:  boolean
+  blocking:     ValidationIssue[]
+  warnings:     ValidationIssue[]
+  can_generate: boolean
   summary: {
     blocking_count:  number
     warning_count:   number
@@ -75,7 +77,156 @@ const POLL_DELAY_MS  = 2_500
 const RETRY_DELAY_MS = 1_500
 
 // ─────────────────────────────────────────────────────────────────
-// Validate Modal
+// Issue type config — label + fix action
+// ─────────────────────────────────────────────────────────────────
+
+function getIssueConfig(issue: ValidationIssue): {
+  label:     string
+  fixLabel?: string
+  fixPath?:  string
+} {
+  switch (issue.type) {
+    case 'NO_TRAINER':
+      return {
+        label:    'No trainer assigned',
+        fixLabel: 'Assign trainer →',
+        fixPath:  '/setup/units-on-offer',
+      }
+    case 'TRAINER_OVERLOAD':
+      return {
+        label:    'Trainer overloaded',
+        fixLabel: 'View trainers →',
+        fixPath:  '/setup/trainers',
+      }
+    case 'SINGLE_TRAINER_BOTTLENECK':
+      return {
+        label:    'Single-trainer bottleneck',
+        fixLabel: 'View trainers →',
+        fixPath:  '/setup/trainers',
+      }
+    case 'NO_SUITABLE_ROOM':
+      return {
+        label:    'No suitable room',
+        fixLabel: 'View rooms →',
+        fixPath:  '/setup/rooms',
+      }
+    case 'SLOT_SHORTAGE':
+      return {
+        label:    'Slot shortage',
+        fixLabel: 'View constraints →',
+        fixPath:  '/constraints',
+      }
+    default:
+      return { label: issue.type }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// IssueRow
+// ─────────────────────────────────────────────────────────────────
+
+function IssueRow({
+  issue,
+  variant,
+  onNavigate,
+}: {
+  issue:      ValidationIssue
+  variant:    'blocking' | 'warning'
+  onNavigate: (path: string) => void
+}) {
+  const cfg = getIssueConfig(issue)
+  const isBlocking = variant === 'blocking'
+
+  return (
+    <div className={cn(
+      'group rounded-lg border px-3 py-2.5 transition-all',
+      isBlocking
+        ? 'border-red-200 bg-red-50 hover:border-red-300 hover:bg-red-100/60'
+        : 'border-amber-200 bg-amber-50 hover:border-amber-300 hover:bg-amber-100/60',
+    )}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start gap-2 min-w-0">
+          {isBlocking
+            ? <XCircle className="h-3.5 w-3.5 text-red-500 mt-0.5 shrink-0" />
+            : <AlertTriangle className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
+          }
+          <div className="min-w-0">
+            {/* Context line */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {issue.cohort && (
+                <span className={cn(
+                  'text-xs font-semibold',
+                  isBlocking ? 'text-red-800' : 'text-amber-800',
+                )}>
+                  {issue.cohort}
+                </span>
+              )}
+              {issue.cohort && (issue.unit_code || issue.trainer_name) && (
+                <span className={cn('text-xs', isBlocking ? 'text-red-400' : 'text-amber-400')}>·</span>
+              )}
+              {issue.trainer_name && (
+                <span className={cn(
+                  'text-xs font-semibold',
+                  isBlocking ? 'text-red-800' : 'text-amber-800',
+                )}>
+                  {issue.trainer_name}
+                </span>
+              )}
+              {issue.unit_code && (
+                <span className={cn(
+                  'font-mono text-xs rounded px-1 py-0.5',
+                  isBlocking ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700',
+                )}>
+                  {issue.unit_code}
+                </span>
+              )}
+            </div>
+            {/* Message */}
+            <p className={cn(
+              'text-xs mt-0.5',
+              isBlocking ? 'text-red-600' : 'text-amber-700',
+            )}>
+              {issue.message}
+            </p>
+            {/* Sole units list (for bottleneck) */}
+            {issue.sole_units && issue.sole_units.length > 0 && (
+              <div className="mt-1 flex flex-wrap gap-1">
+                {issue.sole_units.slice(0, 4).map(([cohort, code], i) => (
+                  <span key={i} className="text-[10px] bg-amber-100 text-amber-600 rounded px-1 py-0.5 font-mono">
+                    {code} ({cohort})
+                  </span>
+                ))}
+                {issue.sole_units.length > 4 && (
+                  <span className="text-[10px] text-amber-500">+{issue.sole_units.length - 4} more</span>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Fix action */}
+        {cfg.fixPath && (
+          <button
+            onClick={() => onNavigate(cfg.fixPath!)}
+            className={cn(
+              'shrink-0 flex items-center gap-1 text-[11px] font-medium rounded px-2 py-1',
+              'opacity-0 group-hover:opacity-100 transition-opacity',
+              isBlocking
+                ? 'bg-red-600 text-white hover:bg-red-700'
+                : 'bg-amber-600 text-white hover:bg-amber-700',
+            )}
+          >
+            {cfg.fixLabel}
+            <ExternalLink className="h-3 w-3" />
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ValidateModal  — generation always allowed
 // ─────────────────────────────────────────────────────────────────
 
 function ValidateModal({
@@ -87,107 +238,214 @@ function ValidateModal({
   onProceed: () => void
   onCancel:  () => void
 }) {
+  const router = useRouter()
+  const [warningsOpen, setWarningsOpen] = useState(true)
+
   const hasBlocking = result.blocking.length > 0
   const hasWarnings = result.warnings.length > 0
+  const allClear    = !hasBlocking && !hasWarnings
+
+  function handleNavigate(path: string) {
+    onCancel()
+    router.push(path)
+  }
+
+  // Severity label for header
+  const severity = hasBlocking ? 'error' : hasWarnings ? 'warning' : 'ok'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden">
-        {/* Header */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden flex flex-col max-h-[90vh]">
+
+        {/* ── Header ─────────────────────────────────────────────── */}
         <div className={cn(
-          'px-6 py-4 flex items-center justify-between',
-          hasBlocking ? 'bg-red-50 border-b border-red-100' : 'bg-amber-50 border-b border-amber-100',
+          'px-5 py-4 flex items-center justify-between shrink-0',
+          severity === 'error'   && 'bg-gradient-to-r from-red-50 to-rose-50 border-b border-red-100',
+          severity === 'warning' && 'bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-100',
+          severity === 'ok'      && 'bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-emerald-100',
         )}>
-          <div className="flex items-center gap-2">
-            {hasBlocking
-              ? <XCircle className="h-5 w-5 text-red-500" />
-              : <AlertTriangle className="h-5 w-5 text-amber-500" />
-            }
-            <h2 className="font-semibold text-gray-900">
-              {hasBlocking ? 'Issues Found — Fix Before Generating' : 'Warnings Found'}
-            </h2>
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              'rounded-full p-1.5',
+              severity === 'error'   && 'bg-red-100',
+              severity === 'warning' && 'bg-amber-100',
+              severity === 'ok'      && 'bg-emerald-100',
+            )}>
+              {severity === 'error'   && <AlertCircle   className="h-4 w-4 text-red-600" />}
+              {severity === 'warning' && <AlertTriangle className="h-4 w-4 text-amber-600" />}
+              {severity === 'ok'      && <CheckCircle2  className="h-4 w-4 text-emerald-600" />}
+            </div>
+            <div>
+              <h2 className="font-semibold text-gray-900 text-sm">
+                {severity === 'error'   && 'Issues detected before generation'}
+                {severity === 'warning' && 'Warnings detected before generation'}
+                {severity === 'ok'      && 'All checks passed'}
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {result.summary.cohorts_checked} cohorts · {result.summary.units_checked} units checked
+              </p>
+            </div>
           </div>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600">
-            <X className="h-5 w-5" />
+          <button
+            onClick={onCancel}
+            className="text-gray-400 hover:text-gray-600 transition-colors rounded-lg p-1 hover:bg-white/60"
+          >
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Summary chips */}
-        <div className="px-6 pt-4 flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-medium text-gray-500">
-            Checked {result.summary.cohorts_checked} cohorts · {result.summary.units_checked} units
-          </span>
-          {result.summary.blocking_count > 0 && (
-            <span className="rounded-full bg-red-100 text-red-700 text-xs font-semibold px-2 py-0.5">
+        {/* ── Summary chips ───────────────────────────────────────── */}
+        <div className="px-5 pt-3 pb-1 flex items-center gap-2 flex-wrap shrink-0">
+          {hasBlocking && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold px-2.5 py-0.5 border border-red-200">
+              <XCircle className="h-3 w-3" />
               {result.summary.blocking_count} blocking
             </span>
           )}
-          {result.summary.warning_count > 0 && (
-            <span className="rounded-full bg-amber-100 text-amber-700 text-xs font-semibold px-2 py-0.5">
+          {hasWarnings && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold px-2.5 py-0.5 border border-amber-200">
+              <AlertTriangle className="h-3 w-3" />
               {result.summary.warning_count} warning{result.summary.warning_count > 1 ? 's' : ''}
+            </span>
+          )}
+          {!hasBlocking && !hasWarnings && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold px-2.5 py-0.5 border border-emerald-200">
+              <CheckCircle2 className="h-3 w-3" />
+              No issues
+            </span>
+          )}
+
+          {hasBlocking && (
+            <span className="text-xs text-gray-400 ml-auto">
+              You can still generate — some units may be skipped
             </span>
           )}
         </div>
 
-        {/* Issues list */}
-        <div className="px-6 py-4 max-h-72 overflow-y-auto space-y-2">
-          {result.blocking.map((issue, i) => (
-            <div key={i} className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5">
-              <div className="flex items-start gap-2">
-                <XCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-red-800">
-                    {issue.cohort && <span className="font-bold">{issue.cohort} · </span>}
-                    {issue.unit_code && <span className="font-mono">{issue.unit_code}</span>}
-                  </p>
-                  <p className="text-xs text-red-600 mt-0.5">{issue.message}</p>
-                </div>
+        {/* ── Scrollable issues body ──────────────────────────────── */}
+        <div className="overflow-y-auto flex-1 px-5 pb-2">
+
+          {/* Blocking issues */}
+          {hasBlocking && (
+            <div className="mt-3 space-y-1.5">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-px flex-1 bg-red-100" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-red-400">
+                  Blocking · {result.blocking.length}
+                </span>
+                <div className="h-px flex-1 bg-red-100" />
               </div>
-            </div>
-          ))}
 
-          {result.warnings.map((issue, i) => (
-            <div key={i} className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-amber-800">
-                    {issue.trainer_name
-                      ? <span className="font-bold">{issue.trainer_name}</span>
-                      : issue.cohort && <span className="font-bold">{issue.cohort}</span>
-                    }
-                    {issue.unit_code && <span className="font-mono ml-1">{issue.unit_code}</span>}
-                  </p>
-                  <p className="text-xs text-amber-700 mt-0.5">{issue.message}</p>
-                </div>
+              {/* Info banner — generation still allowed */}
+              <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 flex items-start gap-2 mb-3">
+                <Info className="h-3.5 w-3.5 text-blue-500 mt-0.5 shrink-0" />
+                <p className="text-xs text-blue-700">
+                  Blocking issues mean some units <strong>will be skipped</strong> during generation.
+                  You can fix them now or generate and fix manually afterward.
+                </p>
               </div>
+
+              {result.blocking.map((issue, i) => (
+                <IssueRow
+                  key={i}
+                  issue={issue}
+                  variant="blocking"
+                  onNavigate={handleNavigate}
+                />
+              ))}
             </div>
-          ))}
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3">
-          <button
-            onClick={onCancel}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
-          >
-            Fix Issues First
-          </button>
-
-          {!hasBlocking && (
-            <button
-              onClick={onProceed}
-              className="flex items-center gap-2 rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-medium text-white hover:bg-[#162d4a] transition-all"
-            >
-              Generate Anyway
-              <ChevronRight className="h-4 w-4" />
-            </button>
           )}
 
-          {hasBlocking && (
-            <p className="text-xs text-red-600 font-medium">
-              Resolve blocking issues before generating
-            </p>
+          {/* Warnings — collapsible */}
+          {hasWarnings && (
+            <div className="mt-3">
+              <button
+                onClick={() => setWarningsOpen(o => !o)}
+                className="w-full flex items-center gap-2 mb-2 group"
+              >
+                <div className="h-px flex-1 bg-amber-100" />
+                <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-amber-400 group-hover:text-amber-600 transition-colors">
+                  Warnings · {result.warnings.length}
+                  {warningsOpen
+                    ? <ChevronUp className="h-3 w-3" />
+                    : <ChevronDown className="h-3 w-3" />
+                  }
+                </span>
+                <div className="h-px flex-1 bg-amber-100" />
+              </button>
+
+              {warningsOpen && (
+                <div className="space-y-1.5">
+                  {result.warnings.map((issue, i) => (
+                    <IssueRow
+                      key={i}
+                      issue={issue}
+                      variant="warning"
+                      onNavigate={handleNavigate}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {allClear && (
+            <div className="py-6 flex flex-col items-center gap-2 text-center">
+              <CheckCircle2 className="h-10 w-10 text-emerald-400" />
+              <p className="text-sm font-semibold text-gray-700">Everything looks good</p>
+              <p className="text-xs text-gray-400">Ready to generate the timetable.</p>
+            </div>
+          )}
+        </div>
+
+        {/* ── Footer ─────────────────────────────────────────────── */}
+        <div className={cn(
+          'px-5 py-4 border-t shrink-0',
+          hasBlocking ? 'border-red-100 bg-red-50/40' : 'border-gray-100 bg-gray-50/40',
+        )}>
+          {hasBlocking ? (
+            /* Two-column layout when blocking: fix first vs generate anyway */
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onCancel}
+                className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+              >
+                Fix issues first
+              </button>
+              <button
+                onClick={onProceed}
+                className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-[#1e3a5f] px-3 py-2 text-sm font-medium text-white hover:bg-[#162d4a] transition-all"
+              >
+                <Zap className="h-3.5 w-3.5" />
+                Generate anyway
+              </button>
+            </div>
+          ) : hasWarnings ? (
+            /* Warnings: secondary cancel + primary generate */
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onCancel}
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all"
+              >
+                Review first
+              </button>
+              <button
+                onClick={onProceed}
+                className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-medium text-white hover:bg-[#162d4a] transition-all"
+              >
+                Generate with warnings
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ) : (
+            /* All clear: just generate */
+            <button
+              onClick={onProceed}
+              className="w-full flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 transition-all"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Generate timetable
+            </button>
           )}
         </div>
       </div>
@@ -288,24 +546,23 @@ export default function TimetablePage() {
   async function handleGenerate() {
     if (!termId || gen.stage === 'submitting' || gen.stage === 'waiting' || gen.stage === 'validating') return
 
-    // Step 1: validate
     setGen({ stage: 'validating', attempt: 0, maxAttempts: MAX_ATTEMPTS, message: 'Checking data…' })
     try {
       const res = await api.get('/timetable/validate/', { params: { term: termId } })
       const vResult: ValidationResult = res.data?.data ?? res.data
 
-      // If all clear, go straight to generate
+      // All clear → go straight to generate, no modal
       if (vResult.blocking.length === 0 && vResult.warnings.length === 0) {
         setGen({ stage: 'idle', attempt: 0, maxAttempts: MAX_ATTEMPTS, message: '' })
         runGenerate()
         return
       }
 
-      // Show modal
+      // Show modal for any issue (blocking or warning)
       setValidationResult(vResult)
       setGen({ stage: 'idle', attempt: 0, maxAttempts: MAX_ATTEMPTS, message: '' })
     } catch {
-      // If validate endpoint fails, proceed to generate anyway
+      // Validate endpoint failure → proceed anyway, don't block
       runGenerate()
     }
   }
@@ -451,9 +708,9 @@ export default function TimetablePage() {
       )}>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 min-w-0">
-            {(isActive) && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-blue-500" />}
+            {isActive   && <Loader2      className="h-4 w-4 shrink-0 animate-spin text-blue-500" />}
             {isDone     && <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />}
-            {isFailed   && <XCircle className="h-4 w-4 shrink-0 text-red-500" />}
+            {isFailed   && <XCircle      className="h-4 w-4 shrink-0 text-red-500" />}
             <span className={cn(
               'font-medium truncate',
               isDone       && 'text-emerald-700',
