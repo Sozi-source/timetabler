@@ -123,6 +123,8 @@ export interface Term {
   is_current: boolean;
   week_number: number;
   weeks_remaining: number;
+  college_year: number;
+  college_semester: number;
 }
 
 // ── Trainer ───────────────────────────────────────────────────────────────
@@ -166,9 +168,14 @@ export interface Cohort {
   current_term: number;
   computed_current_term?: number;
   term_is_synced?: boolean;
+  total_terms?: number;
   student_count: number;
   is_active: boolean;
   progress: CohortProgress;
+  enrolment_id?: string | null;
+  enrolment_status?: string | null;
+  programme_term?: number | null;
+  is_enrolled?: boolean;
 }
 
 // ── ScheduledUnit (Timetable Entry) ───────────────────────────────────────

@@ -43,7 +43,7 @@ export const useTerms = () =>
   useQuery({ queryKey: queryKeys.terms, queryFn: getTerms })
 
 export const useCohorts = () =>
-  useQuery({ queryKey: queryKeys.cohorts, queryFn: getCohorts })
+  useQuery({ queryKey: queryKeys.cohorts, queryFn: getCohorts, staleTime: 0 })
 
 export const useConstraints = () =>
   useQuery({ queryKey: queryKeys.constraints, queryFn: getConstraints })

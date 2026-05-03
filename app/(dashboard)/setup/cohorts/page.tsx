@@ -27,17 +27,19 @@ type CohortForm = typeof BLANK
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
-/** Compute which term a cohort is in based on start date (3 terms/year, 4 months each) */
+/** Semester index: Jan-Apr=Sem1, May-Aug=Sem2, Sep-Dec=Sem3 */
+function semesterIndex(year: number, month: number): number {
+  const sem = month <= 4 ? 1 : month <= 8 ? 2 : 3
+  return year * 3 + (sem - 1)
+}
+
+/** Compute which term a cohort is in using college semester index */
 function computeTerm(startYear: number, startMonth: number, totalTerms?: number): number {
   const today = new Date()
-  const start = new Date(startYear, startMonth - 1, 1)
-  if (today < start) return 1
-  const monthsElapsed =
-    (today.getFullYear() - start.getFullYear()) * 12 +
-    (today.getMonth() - start.getMonth())
-  const term = Math.floor(monthsElapsed / 4) + 1
-  const max = totalTerms ?? 99
-  return Math.max(1, Math.min(term, max))
+  if (today < new Date(startYear, startMonth - 1, 1)) return 1
+  const elapsed = semesterIndex(today.getFullYear(), today.getMonth() + 1)
+                - semesterIndex(startYear, startMonth)
+  return Math.max(1, Math.min(elapsed + 1, totalTerms ?? 99))
 }
 
 export default function CohortsPage() {
@@ -49,9 +51,8 @@ export default function CohortsPage() {
   const [form, setForm] = useState<CohortForm>({ ...BLANK })
   const [delId, setDelId] = useState<string | null>(null)
 
-  // Live-compute term preview from form values
   const selectedProg = programmes.find(p => p.id === form.programme)
-  const previewTerm = computeTerm(form.start_year, form.start_month, selectedProg?.total_terms)
+  const previewTerm  = computeTerm(form.start_year, form.start_month, selectedProg?.total_terms)
 
   function openCreate() {
     setEditing(null)
@@ -86,7 +87,7 @@ export default function CohortsPage() {
       : api.post('/cohorts/', {
           ...form,
           programme_id: form.programme,
-          current_term: previewTerm,   // send computed term on create
+          current_term: previewTerm,
         }).then(r => r.data),
     onSuccess: res => {
       if (res.ok) {
@@ -169,26 +170,48 @@ export default function CohortsPage() {
           {
             header: 'Current Term',
             render: c => {
-              const synced = c.term_is_synced ?? true
-              const computed = c.computed_current_term ?? c.current_term
+              const computed   = c.computed_current_term ?? c.current_term
+              const total      = c.total_terms
+              const isFinal    = total != null && computed >= total
+              const isComplete = c.enrolment_status === 'COMPLETED'
+
+              // Cohort has been advanced past their final term → truly done
+              if (isComplete) {
+                return (
+                  <span className="rounded-full bg-gray-100 text-gray-500 px-2 py-0.5 text-xs font-medium flex items-center gap-1 w-fit">
+                    ✓ Completed
+                  </span>
+                )
+              }
+
+              // Cohort is currently in their last term — not yet completed
+              if (isFinal) {
+                return (
+                  <span className="rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-xs font-medium flex items-center gap-1 w-fit">
+                    T{computed} · Final Term
+                  </span>
+                )
+              }
+
+              // Normal active cohort
               return (
                 <div className="flex items-center gap-1.5">
                   <span className="rounded-full bg-blue-100 text-blue-700 px-2 py-0.5 text-xs font-medium">
-                    T{c.current_term ?? '—'}
+                    T{computed ?? '—'} / {total ?? '—'}
                   </span>
-                  {!synced && (
-                    <button
-                      title={`Calendar says T${computed} — click to sync`}
-                      onClick={() => syncMutation.mutate({ id: c.id, term: computed })}
-                      className="flex items-center gap-1 text-amber-600 hover:text-amber-700"
-                    >
-                      <AlertTriangle className="h-3.5 w-3.5" />
-                      <span className="text-xs">→ T{computed}</span>
-                    </button>
-                  )}
-                  {synced && (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                  )}
+                  {(c.term_is_synced ?? true)
+                    ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                    : (
+                      <button
+                        title={`Calendar says T${computed} — click to sync`}
+                        onClick={() => syncMutation.mutate({ id: c.id, term: computed })}
+                        className="flex items-center gap-1 text-amber-600 hover:text-amber-700"
+                      >
+                        <AlertTriangle className="h-3.5 w-3.5" />
+                        <span className="text-xs">→ T{computed}</span>
+                      </button>
+                    )
+                  }
                 </div>
               )
             },
@@ -208,17 +231,24 @@ export default function CohortsPage() {
           },
           {
             header: '',
-            render: c => (
-              <button
-                onClick={() => {
-                  if (!confirm(`Advance "${c.name}" to term ${(c.current_term ?? 0) + 1}?`)) return
-                  advanceMutation.mutate(c.id)
-                }}
-                className="flex items-center gap-1 rounded-lg border border-gray-200 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 transition-colors"
-              >
-                <ArrowRight className="h-3 w-3" /> Advance
-              </button>
-            ),
+            render: c => {
+              const computed   = c.computed_current_term ?? c.current_term ?? 0
+              // Only hide Advance for cohorts that are truly COMPLETED (past final term)
+              const isComplete = c.enrolment_status === 'COMPLETED'
+              if (isComplete) return null
+              const nextTerm = computed + 1
+              return (
+                <button
+                  onClick={() => {
+                    if (!confirm(`Advance "${c.name}" to term ${nextTerm}?`)) return
+                    advanceMutation.mutate(c.id)
+                  }}
+                  className="flex items-center gap-1 rounded-lg border border-gray-200 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  <ArrowRight className="h-3 w-3" /> Advance
+                </button>
+              )
+            },
           },
         ]}
       />
@@ -283,7 +313,6 @@ export default function CohortsPage() {
           </div>
         </div>
 
-        {/* Auto-calculated term preview */}
         {form.programme && (
           <div className="rounded-lg bg-blue-50 border border-blue-100 px-3 py-2.5 flex items-center justify-between">
             <div>

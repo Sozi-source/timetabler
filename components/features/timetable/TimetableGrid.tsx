@@ -69,7 +69,7 @@ export default function TimetableGrid({
     return (
       <div className="animate-pulse space-y-2">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-20 rounded-lg bg-gray-100" />
+          <div key={i} className="h-16 sm:h-20 rounded-lg bg-gray-100" />
         ))}
       </div>
     )
@@ -77,31 +77,65 @@ export default function TimetableGrid({
 
   return (
     <>
-      <div className="setup-table-wrap rounded-xl border border-gray-200 bg-white shadow-sm">
+      {/* Outer wrapper — horizontal scroll on small screens */}
+      <div className="w-full overflow-x-auto rounded-xl border-2 border-[#1e3a5f]/20 bg-white shadow-md">
         <div
-          className="grid min-w-[640px]"
-          style={{ gridTemplateColumns: `80px repeat(${days.length}, minmax(120px, 1fr))` }}
+          className="grid"
+          style={{
+            gridTemplateColumns: `64px repeat(${days.length}, minmax(100px, 1fr))`,
+            minWidth: `${64 + days.length * 100}px`,
+          }}
         >
-          <div className="border-b border-r border-gray-100 bg-gray-50 p-2" />
-          {days.map(day => (
+          {/* ── Header row ── */}
+
+          {/* Corner cell */}
+          <div className="border-b-2 border-r-2 border-[#1e3a5f]/20 bg-[#1e3a5f]/5 p-2" />
+
+          {/* Day headers */}
+          {days.map((day, di) => (
             <div
               key={day}
-              className="border-b border-r border-gray-100 bg-gray-50 px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase tracking-wide last:border-r-0"
+              className={[
+                'border-b-2 border-[#1e3a5f]/20 bg-[#1e3a5f]/5',
+                'px-2 sm:px-3 py-2 text-center',
+                'text-[10px] sm:text-xs font-bold text-[#1e3a5f] uppercase tracking-widest',
+                di < days.length - 1 ? 'border-r border-[#1e3a5f]/10' : '',
+              ].join(' ')}
             >
               {DAY_SHORT[day] ?? day}
             </div>
           ))}
 
-          {periods.map(period => {
+          {/* ── Period rows ── */}
+          {periods.map((period, pi) => {
+            const isLastPeriod = pi === periods.length - 1
+
             if (period.is_break) {
               return (
                 <div key={period.id} className="contents">
-                  <div className="border-b border-r border-gray-100 bg-gray-50 px-2 py-1.5 flex items-center">
-                    <span className="text-[10px] font-medium text-gray-400 uppercase">{period.label}</span>
+                  {/* Break label cell */}
+                  <div className={[
+                    'border-r-2 border-[#1e3a5f]/20 bg-amber-50/60 px-2 py-1.5 flex items-center',
+                    !isLastPeriod ? 'border-b border-amber-200/60' : '',
+                  ].join(' ')}>
+                    <span className="text-[9px] sm:text-[10px] font-semibold text-amber-500 uppercase tracking-wide">
+                      {period.label}
+                    </span>
                   </div>
-                  {days.map(day => (
-                    <div key={day} className="border-b border-r border-gray-100 bg-gray-50/80 last:border-r-0 flex items-center justify-center">
-                      <span className="text-[10px] text-gray-300 tracking-widest">— BREAK —</span>
+
+                  {/* Break span cells */}
+                  {days.map((day, di) => (
+                    <div
+                      key={day}
+                      className={[
+                        'bg-amber-50/40 flex items-center justify-center',
+                        !isLastPeriod ? 'border-b border-amber-200/40' : '',
+                        di < days.length - 1 ? 'border-r border-amber-200/30' : '',
+                      ].join(' ')}
+                    >
+                      <span className="text-[9px] sm:text-[10px] text-amber-300 tracking-widest font-medium">
+                        BREAK
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -110,15 +144,39 @@ export default function TimetableGrid({
 
             return (
               <div key={period.id} className="contents">
-                <div className="border-b border-r border-gray-100 bg-gray-50 px-2 py-2 min-h-[90px]">
-                  <p className="text-[11px] font-semibold text-gray-600">{period.label}</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">{period.start_time?.slice(0, 5)}</p>
-                  <p className="text-[10px] text-gray-400">{period.end_time?.slice(0, 5)}</p>
+                {/* Period label cell */}
+                <div className={[
+                  'border-r-2 border-[#1e3a5f]/20 bg-[#1e3a5f]/[0.03] px-2 py-2 min-h-[80px] sm:min-h-[96px]',
+                  !isLastPeriod ? 'border-b border-[#1e3a5f]/10' : '',
+                ].join(' ')}>
+                  <p className="text-[10px] sm:text-[11px] font-bold text-[#1e3a5f]/70 leading-tight">
+                    {period.label}
+                  </p>
+                  <p className="text-[9px] sm:text-[10px] text-gray-400 mt-1 tabular-nums">
+                    {period.start_time?.slice(0, 5)}
+                  </p>
+                  <p className="text-[9px] sm:text-[10px] text-gray-400 tabular-nums">
+                    {period.end_time?.slice(0, 5)}
+                  </p>
                 </div>
-                {days.map(day => {
+
+                {/* Entry cells */}
+                {days.map((day, di) => {
                   const cellEntries = grid[day]?.[String(period.id)] ?? []
+                  const hasEntries  = cellEntries.length > 0
+
                   return (
-                    <div key={day} className="border-b border-r border-gray-100 p-1.5 min-h-[90px] last:border-r-0 space-y-1">
+                    <div
+                      key={day}
+                      className={[
+                        'p-1 sm:p-1.5 min-h-[80px] sm:min-h-[96px] space-y-1 transition-colors',
+                        hasEntries ? 'bg-white' : 'bg-gray-50/40 hover:bg-gray-50',
+                        !isLastPeriod ? 'border-b border-[#1e3a5f]/10' : '',
+                        di < days.length - 1 ? 'border-r border-[#1e3a5f]/10' : '',
+                        // Accent left border on cells that have entries
+                        hasEntries ? 'relative' : '',
+                      ].join(' ')}
+                    >
                       {cellEntries.map(entry => (
                         <EntryCard
                           key={entry.id}
