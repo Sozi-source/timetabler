@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { CheckCircle2, AlertCircle, Search, Users, BookOpen, Loader2, ChevronDown, RefreshCw } from 'lucide-react'
+import { CheckCircle2, AlertCircle, Search, Users, BookOpen, Loader2, ChevronDown, RefreshCw, X } from 'lucide-react'
 import api from '@/lib/api'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -77,12 +77,13 @@ async function fetchAll<T>(url: string): Promise<T> {
 // ─── TrainerSelect ────────────────────────────────────────────────────────────
 
 function TrainerSelect({
-  trainers, value, saving, onChange,
+  trainers, value, saving, onChange, onUnassign,
 }: {
   trainers: Trainer[]
   value: string | null
   saving: boolean
   onChange: (id: string) => void
+  onUnassign: () => void
 }) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -92,8 +93,10 @@ function TrainerSelect({
     t.short_name.toLowerCase().includes(search.toLowerCase())
   )
 
+  const close = () => { setOpen(false); setSearch('') }
+
   return (
-    <div className="relative">
+    <div className="relative flex items-center gap-1">
       <button
         onClick={() => setOpen(o => !o)}
         disabled={saving}
@@ -113,10 +116,21 @@ function TrainerSelect({
           : <ChevronDown size={14} className="shrink-0 opacity-50" />}
       </button>
 
+      {/* Unassign button — only shown when a trainer is assigned */}
+      {value && !saving && (
+        <button
+          onClick={() => { onUnassign(); close() }}
+          title="Remove trainer assignment"
+          className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 border border-transparent hover:border-red-100 transition-colors"
+        >
+          <X size={14} />
+        </button>
+      )}
+
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => { setOpen(false); setSearch('') }} />
-          <div className="absolute z-20 mt-1 w-72 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
+          <div className="fixed inset-0 z-10" onClick={close} />
+          <div className="absolute right-0 z-20 mt-1 w-72 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden" style={{ top: '100%' }}>
             <div className="p-2 border-b border-slate-100">
               <div className="flex items-center gap-2 px-2 py-1.5 bg-slate-50 rounded-lg">
                 <Search size={13} className="text-slate-400" />
@@ -136,7 +150,7 @@ function TrainerSelect({
               {filtered.map(t => (
                 <li key={t.id}>
                   <button
-                    onClick={() => { onChange(t.id); setOpen(false); setSearch('') }}
+                    onClick={() => { onChange(t.id); close() }}
                     className={[
                       'w-full text-left px-4 py-2 text-sm transition-colors hover:bg-slate-50 flex items-baseline gap-2',
                       t.id === value ? 'text-emerald-700 font-medium' : 'text-slate-700',
@@ -159,11 +173,12 @@ function TrainerSelect({
 // ─── UnitRowItem ──────────────────────────────────────────────────────────────
 
 function UnitRowItem({
-  row, trainers, onAssign, subtitle,
+  row, trainers, onAssign, onUnassign, subtitle,
 }: {
   row: UnitRow
   trainers: Trainer[]
   onAssign: (trainerId: string) => void
+  onUnassign: () => void
   subtitle?: string
 }) {
   return (
@@ -192,6 +207,7 @@ function UnitRowItem({
         value={row.currentTrainerId}
         saving={row.saving}
         onChange={onAssign}
+        onUnassign={onUnassign}
       />
     </div>
   )
@@ -221,7 +237,6 @@ export default function UnitsOnOfferPage() {
       const sharingGroupMap = new Map<string, string>()
       ;(programsRaw as Programme[]).forEach(p => sharingGroupMap.set(p.id, p.sharing_group ?? ''))
 
-      // Fetch ALL units (including outsourced) for each cohort's current term
       const cohortUnits: { cohort: Cohort; units: CurriculumUnit[] }[] = await Promise.all(
         (cohortsRaw as Cohort[]).map(async cohort => {
           try {
@@ -235,7 +250,6 @@ export default function UnitsOnOfferPage() {
         })
       )
 
-      // Group units by name+sharing_group to detect shared units
       const nameToEntries = new Map<string, {
         cohortId: string
         cohortName: string
@@ -264,7 +278,6 @@ export default function UnitsOnOfferPage() {
         })
       })
 
-      // Split into shared vs unique per-cohort
       const shared: UnitRow[] = []
       const uniqueByCohort = new Map<string, { cohortName: string; rows: UnitRow[] }>()
       cohortUnits.forEach(({ cohort }) => {
@@ -367,6 +380,51 @@ export default function UnitsOnOfferPage() {
     }
   }
 
+  // ── Unassign trainer ──────────────────────────────────────────────────────
+
+  async function unassignTrainer(
+    unitIds: string[], currentTrainerId: string, isShared: boolean, rowName: string
+  ) {
+    const setSaving = (v: boolean) => {
+      if (isShared) {
+        setSharedRows(prev => prev.map(r => r.name === rowName ? { ...r, saving: v } : r))
+      } else {
+        setCohortSections(prev => prev.map(sec => ({
+          ...sec,
+          units: sec.units.map(u => u.name === rowName ? { ...u, saving: v } : u),
+        })))
+      }
+    }
+
+    setSaving(true)
+    try {
+      await Promise.all(
+        unitIds.map(uid =>
+          api.delete(`/curriculum/${uid}/trainers/`, { data: { trainer_id: currentTrainerId } })
+        )
+      )
+      if (isShared) {
+        setSharedRows(prev => prev.map(r =>
+          r.name === rowName
+            ? { ...r, currentTrainerId: null, currentTrainerName: null, saving: false }
+            : r
+        ))
+      } else {
+        setCohortSections(prev => prev.map(sec => ({
+          ...sec,
+          units: sec.units.map(u =>
+            u.name === rowName
+              ? { ...u, currentTrainerId: null, currentTrainerName: null, saving: false }
+              : u
+          ),
+        })))
+      }
+    } catch {
+      setSaving(false)
+      alert('Failed to remove trainer. Please try again.')
+    }
+  }
+
   // ── Progress ──────────────────────────────────────────────────────────────
 
   const allRows = [...sharedRows, ...cohortSections.flatMap(s => s.units)]
@@ -449,6 +507,7 @@ export default function UnitsOnOfferPage() {
                 trainers={trainers}
                 subtitle={row.entries.map(e => `${e.cohortName} (${e.unitCode})`).join(' · ')}
                 onAssign={tid => assignTrainer(row.entries.map(e => e.unitId), tid, true, row.name)}
+                onUnassign={() => row.currentTrainerId && unassignTrainer(row.entries.map(e => e.unitId), row.currentTrainerId, true, row.name)}
               />
             ))}
           </div>
@@ -472,6 +531,7 @@ export default function UnitsOnOfferPage() {
                 row={row}
                 trainers={trainers}
                 onAssign={tid => assignTrainer([row.entries[0].unitId], tid, false, row.name)}
+                onUnassign={() => row.currentTrainerId && unassignTrainer([row.entries[0].unitId], row.currentTrainerId, false, row.name)}
               />
             ))}
           </div>

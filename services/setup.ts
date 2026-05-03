@@ -5,10 +5,6 @@ import type {
 } from '@/types'
 
 // ── Pagination helper ─────────────────────────────────────────────────────────
-// Backend uses PageNumberPagination — responses may be:
-//   { count, next, previous, results: [...] }  ← paginated
-//   [...]                                       ← plain array
-//   { ok: true, data: [...] }                   ← already unwrapped by caller
 function unwrapList<T>(data: unknown): T[] {
   if (Array.isArray(data)) return data
   if (data && typeof data === 'object' && 'results' in data) {
@@ -33,6 +29,10 @@ export const getCurriculum = (programmeId: string, termNumber?: number) => {
   if (termNumber) params.append('term_number', String(termNumber))
   return api.get(`/curriculum/?${params}`).then(r => unwrapList<CurriculumUnit>(r.data.data))
 }
+
+// Fetches all curriculum units across all programmes — used by ConstraintsPage
+export const getAllCurriculum = () =>
+  api.get('/curriculum/').then(r => unwrapList<CurriculumUnit>(r.data.data))
 
 export const getPeriods = () =>
   api.get('/periods/').then(r => unwrapList<Period>(r.data.data))
@@ -79,7 +79,7 @@ export const updateConstraint = (constraintId: string, payload: object) =>
   api.put(`/constraints/${constraintId}/`, payload).then(r => r.data)
 
 export const deleteConstraint = (constraintId: string) =>
-  api.delete(`/constraints/${constraintId}/`).then(r => r.data)
+  api.delete(`/constraints/${constraintId}/`).then(() => ({ ok: true }))
 
 export const setTrainerAvailability = (trainerId: string, payload: object) =>
   api.post(`/trainers/${trainerId}/availability/`, payload).then(r => r.data)

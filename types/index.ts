@@ -177,16 +177,20 @@ export type DayCode = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
 
 export interface ScheduledUnit {
   id: string;
+  // Raw IDs (for edit modals / API mutations)
   term: string;
-  cohort: string;
-  cohort_name: string;
   curriculum_unit: string;
+  cohort: string | null;
+  trainer: string | null;
+  room: string | null;
+  // Display names (rendered in cards / grids)
   unit_code: string;
   unit_name: string;
-  trainer: string;
-  trainer_name: string;
-  room: string;
-  room_code: string;
+  cohort_name: string;
+  trainer_name: string | null;
+  trainer_full: string | null;   // e.g. "Mrs Ayuma"
+  room_code: string | null;
+  // Scheduling
   day: DayCode;
   period: string;
   period_label: string;
@@ -196,6 +200,19 @@ export interface ScheduledUnit {
   status: EntryStatus;
   published_at: string | null;
   notes: string;
+}
+
+// ── Master Timetable ──────────────────────────────────────────────────────
+export type TimetableStatus = 'DRAFT' | 'PUBLISHED' | 'CANCELLED'
+
+export type TimetableGrid = Record<string, Record<string, ScheduledUnit[]>>
+
+export interface MasterTimetableData {
+  grid: TimetableGrid
+  periods: Period[]
+  days: string[]
+  status: TimetableStatus
+  total_entries: number
 }
 
 // ── Conflict ──────────────────────────────────────────────────────────────
@@ -232,6 +249,8 @@ export type ConstraintRule  =
 
 export interface Constraint {
   id: string;
+  unit_name: string | null
+  unit_code: string | null
   scope: ConstraintScope;
   rule: ConstraintRule;
   is_hard: boolean;
@@ -243,6 +262,7 @@ export interface Constraint {
   is_active: boolean;
   notes: string;
 }
+
 
 // ── Dashboard ─────────────────────────────────────────────────────────────
 export interface DashboardData {

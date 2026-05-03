@@ -1,4 +1,4 @@
-'use client'
+content = r"""'use client'
 
 import { useMemo, useState } from 'react'
 import type { ScheduledUnit, Period, TimetableGrid as TimetableGridType } from '@/types'
@@ -146,3 +146,8 @@ export default function TimetableGrid({
     </>
   )
 }
+"""
+
+with open('components/features/timetable/TimetableGrid.tsx', 'w', encoding='utf-8') as f:
+    f.write(content)
+print('Done')

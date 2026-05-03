@@ -149,7 +149,7 @@ export default function TrainersPage() {
         last_name:            form.last_name,
         email:                form.email,
         phone:                form.phone,
-        staff_id:             form.staff_id,
+        staff_id:             form.staff_id || `TRN-${Date.now()}`,
         department_id:        form.department_id,
         institution_id:       form.institution_id,
         employment_type:      form.employment_type,

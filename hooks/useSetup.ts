@@ -3,7 +3,7 @@ import { queryKeys } from '@/types'
 import {
   getInstitution, getDepartments, getProgrammes,
   getPeriods, getRooms, getTrainers, getTerms,
-  getCohorts, getConstraints, getCurriculum,
+  getCohorts, getConstraints, getCurriculum, getAllCurriculum,
   getTrainerAvailability, getCohortProgress,
 } from '@/services/setup'
 
@@ -19,8 +19,15 @@ export const useProgrammes = () =>
 export const useCurriculum = (programmeId: string, termNumber?: number) =>
   useQuery({
     queryKey: queryKeys.curriculum(programmeId, termNumber),
-    queryFn: () => getCurriculum(programmeId, termNumber),
-    enabled: !!programmeId,
+    queryFn:  () => getCurriculum(programmeId, termNumber),
+    enabled:  !!programmeId,
+  })
+
+// All units across all programmes — no programme filter required
+export const useAllCurriculum = () =>
+  useQuery({
+    queryKey: ['curriculum', 'all'] as const,
+    queryFn:  getAllCurriculum,
   })
 
 export const usePeriods = () =>
@@ -44,13 +51,13 @@ export const useConstraints = () =>
 export const useTrainerAvailability = (trainerId: string) =>
   useQuery({
     queryKey: queryKeys.availability(trainerId),
-    queryFn: () => getTrainerAvailability(trainerId),
-    enabled: !!trainerId,
+    queryFn:  () => getTrainerAvailability(trainerId),
+    enabled:  !!trainerId,
   })
 
 export const useCohortProgress = (cohortId: string) =>
   useQuery({
     queryKey: queryKeys.cohortProgress(cohortId),
-    queryFn: () => getCohortProgress(cohortId),
-    enabled: !!cohortId,
+    queryFn:  () => getCohortProgress(cohortId),
+    enabled:  !!cohortId,
   })
