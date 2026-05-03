@@ -58,8 +58,8 @@ interface UnitRow {
 }
 
 interface CombinedRow {
-  unitName: string        // shared name key
-  unitCode: string        // representative code (first cohort's)
+  unitName: string
+  unitCode: string
   isOutsourced: boolean
   cohorts: { cohortId: string; cohortName: string; unitId: string; unitCode: string }[]
   currentTrainerId: string | null
@@ -72,7 +72,7 @@ interface CohortSection {
   cohortName: string
   programme: string
   currentTerm: number
-  units: UnitRow[]         // units unique to this cohort
+  units: UnitRow[]
 }
 
 // ─── API helper ───────────────────────────────────────────────────────────────
@@ -105,12 +105,15 @@ function TrainerSelect({ trainers, value, saving, onChange, onUnassign }: {
   const close = () => { setOpen(false); setSearch('') }
 
   return (
-    <div className="relative flex items-center gap-1 shrink-0">
+    // Full-width on mobile, fixed-width on sm+
+    <div className="relative flex items-center gap-1 w-full sm:w-auto shrink-0">
       <button
         onClick={() => setOpen(o => !o)}
         disabled={saving}
         className={[
-          'flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm w-48 justify-between border transition-colors',
+          'flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm justify-between border transition-colors',
+          // Full width on mobile, fixed on sm+
+          'w-full sm:w-48',
           value ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300',
           saving ? 'opacity-60 cursor-wait' : 'cursor-pointer',
         ].join(' ')}
@@ -127,7 +130,7 @@ function TrainerSelect({ trainers, value, saving, onChange, onUnassign }: {
         <button
           onClick={() => { onUnassign(); close() }}
           title="Remove assignment"
-          className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 border border-transparent hover:border-red-100 transition-colors"
+          className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 border border-transparent hover:border-red-100 transition-colors shrink-0"
         >
           <X size={13} />
         </button>
@@ -136,7 +139,8 @@ function TrainerSelect({ trainers, value, saving, onChange, onUnassign }: {
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={close} />
-          <div className="absolute right-0 z-20 w-64 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden" style={{ top: '100%', marginTop: 4 }}>
+          {/* Dropdown: full-width on mobile, 64-wide on sm+ */}
+          <div className="absolute left-0 sm:left-auto sm:right-0 z-20 w-full sm:w-64 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden" style={{ top: '100%', marginTop: 4 }}>
             <div className="p-2 border-b border-slate-100">
               <div className="flex items-center gap-2 px-2 py-1.5 bg-slate-50 rounded-lg">
                 <Search size={12} className="text-slate-400" />
@@ -191,7 +195,6 @@ export default function UnitsOnOfferPage() {
       const sharingGroupMap = new Map<string, string>()
       ;(programsRaw as Programme[]).forEach(p => sharingGroupMap.set(p.id, p.sharing_group ?? ''))
 
-      // Fetch current-term units for each cohort using their stored current_term
       const cohortUnits: { cohort: Cohort; units: CurriculumUnit[] }[] = await Promise.all(
         (cohortsRaw as Cohort[]).map(async cohort => {
           try {
@@ -205,8 +208,6 @@ export default function UnitsOnOfferPage() {
         })
       )
 
-      // ── Detect combined (shared) units ────────────────────────────────────
-      // Key: sharingGroup::codeBase::unitName — same across programmes in same group
       type RawEntry = {
         cohortId: string; cohortName: string
         unitId: string; unitCode: string; unitName: string
@@ -235,7 +236,6 @@ export default function UnitsOnOfferPage() {
         })
       })
 
-      // Split into combined (≥2 cohorts) and unique (1 cohort)
       const combinedUnitIds = new Set<string>()
       const newCombined: CombinedRow[] = []
 
@@ -254,7 +254,6 @@ export default function UnitsOnOfferPage() {
         }
       })
 
-      // Per-cohort sections with only their unique units
       const newSections: CohortSection[] = cohortUnits
         .filter(({ units }) => units.length > 0)
         .map(({ cohort, units }) => ({
@@ -371,36 +370,38 @@ export default function UnitsOnOfferPage() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+    // Tighter horizontal padding on mobile
+    <div className="max-w-4xl mx-auto px-3 sm:px-4 py-5 sm:py-8 space-y-6 sm:space-y-8">
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      {/* Header — stacks vertically on mobile */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-800 tracking-tight">Units on Offer</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-xl sm:text-2xl font-semibold text-slate-800 tracking-tight">Units on Offer</h1>
+          <p className="mt-1 text-xs sm:text-sm text-slate-500">
             Assign trainers to each cohort's current term units.{' '}
             <span className="text-violet-600 font-medium">Combined</span> units share one trainer across cohorts.{' '}
             <span className="text-orange-500 font-medium">Outsourced</span> units require an external trainer.
           </p>
         </div>
-        <button onClick={load} className="flex items-center gap-1.5 px-3 py-2 text-xs text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shrink-0">
+        {/* Refresh button: full-width on mobile, auto on sm+ */}
+        <button onClick={load} className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors w-full sm:w-auto sm:shrink-0">
           <RefreshCw size={13} /> Refresh
         </button>
       </div>
 
       {/* Active term pill */}
       {activeTerm && (
-        <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-          <BookOpen size={15} className="text-slate-400 shrink-0" />
+        <div className="flex items-start gap-2 text-xs sm:text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3">
+          <BookOpen size={15} className="text-slate-400 shrink-0 mt-0.5" />
           <span>Showing units for cohorts in their <strong>current term</strong> as of <strong>{activeTerm.name}</strong></span>
         </div>
       )}
 
       {/* Progress bar */}
-      <div className="bg-white border border-slate-200 rounded-xl p-4">
-        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-          <span className="text-sm font-medium text-slate-700">Assignment progress</span>
-          <span className={`text-sm font-semibold ${pct === 100 ? 'text-emerald-600' : 'text-amber-600'}`}>
+      <div className="bg-white border border-slate-200 rounded-xl p-3 sm:p-4">
+        <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+          <span className="text-xs sm:text-sm font-medium text-slate-700">Assignment progress</span>
+          <span className={`text-xs sm:text-sm font-semibold ${pct === 100 ? 'text-emerald-600' : 'text-amber-600'}`}>
             {assigned} / {total} assigned ({pct}%)
           </span>
         </div>
@@ -412,28 +413,30 @@ export default function UnitsOnOfferPage() {
       {/* ── Combined units section ── */}
       {combinedRows.length > 0 && (
         <section>
-          <div className="flex items-center gap-2 mb-3">
-            <Link2 size={16} className="text-violet-500" />
-            <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Combined Units</h2>
-            <span className="text-xs text-slate-400">— one trainer covers all cohorts in this group</span>
+          {/* Section label — wraps cleanly on mobile */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-3">
+            <Link2 size={15} className="text-violet-500 shrink-0" />
+            <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Combined Units</h2>
+            <span className="text-xs text-slate-400 hidden sm:inline">— one trainer covers all cohorts</span>
             <span className="ml-auto text-xs text-slate-400">{combinedRows.filter(r => r.currentTrainerId).length}/{combinedRows.length} assigned</span>
           </div>
           <div className="bg-white border border-violet-200 rounded-xl overflow-hidden divide-y divide-violet-50">
             {combinedRows.map(row => (
-              <div key={row.unitName} className="px-4 py-3 hover:bg-violet-50/40 transition-colors">
-                <div className="flex items-start justify-between gap-3 flex-wrap sm:flex-nowrap">
+              <div key={row.unitName} className="px-3 sm:px-4 py-3 hover:bg-violet-50/40 transition-colors">
+                {/* Stack unit info and trainer select on mobile */}
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       {row.currentTrainerId
                         ? <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
                         : <AlertCircle size={13} className="text-amber-400 shrink-0" />}
-                      <span className="text-sm font-medium text-slate-800">{row.unitName}</span>
+                      <span className="text-sm font-medium text-slate-800 break-words">{row.unitName}</span>
                       {row.isOutsourced && (
-                        <span className="text-xs px-1.5 py-0.5 rounded-full bg-orange-50 text-orange-600 border border-orange-200">Outsourced</span>
+                        <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-orange-50 text-orange-600 border border-orange-200">Outsourced</span>
                       )}
                     </div>
-                    {/* Cohort breakdown */}
-                    <div className="flex flex-wrap gap-1.5 mt-1.5 pl-5">
+                    {/* Cohort pills */}
+                    <div className="flex flex-wrap gap-1 mt-1.5 pl-5">
                       {row.cohorts.map(c => (
                         <span key={c.cohortId} className="text-[11px] px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 font-medium">
                           {c.cohortName} · {c.unitCode}
@@ -463,33 +466,34 @@ export default function UnitsOnOfferPage() {
 
         return (
           <section key={sec.cohortId}>
-            {/* Section header */}
-            <div className="flex items-center gap-2 mb-3 flex-wrap">
-              <Users size={16} className="text-blue-500 shrink-0" />
+            {/* Section header — wraps on mobile */}
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-3">
+              <Users size={15} className="text-blue-500 shrink-0" />
               <h2 className="text-sm font-bold text-slate-800">{sec.cohortName}</h2>
-              <span className="text-xs text-slate-400 shrink-0">{sec.programme}</span>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100 font-medium shrink-0">
+              <span className="text-xs text-slate-400 hidden sm:inline">{sec.programme}</span>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100 font-medium">
                 Term {sec.currentTerm}
               </span>
-              <span className={`ml-auto text-xs font-medium shrink-0 ${secPct === 100 ? 'text-emerald-600' : 'text-amber-600'}`}>
+              <span className={`ml-auto text-xs font-medium ${secPct === 100 ? 'text-emerald-600' : 'text-amber-600'}`}>
                 {secAssigned}/{secTotal} assigned
               </span>
             </div>
 
-            {/* Units table */}
+            {/* Units list */}
             <div className="bg-white border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
               {sec.units.map(unit => (
-                <div key={unit.unitId} className="px-4 py-3 hover:bg-slate-50/60 transition-colors">
-                  <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+                <div key={unit.unitId} className="px-3 sm:px-4 py-3 hover:bg-slate-50/60 transition-colors">
+                  {/* Stack on mobile */}
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-start gap-2 flex-wrap">
                         {unit.currentTrainerId
-                          ? <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
-                          : <AlertCircle size={13} className="text-amber-400 shrink-0" />}
-                        <span className="text-sm font-medium text-slate-800 truncate">{unit.unitName}</span>
-                        <span className="text-xs text-slate-400 shrink-0 font-mono">{unit.unitCode}</span>
+                          ? <CheckCircle2 size={13} className="text-emerald-500 shrink-0 mt-0.5" />
+                          : <AlertCircle size={13} className="text-amber-400 shrink-0 mt-0.5" />}
+                        <span className="text-sm font-medium text-slate-800 break-words leading-snug">{unit.unitName}</span>
+                        <span className="text-xs text-slate-400 font-mono">{unit.unitCode}</span>
                         {unit.isOutsourced && (
-                          <span className="text-xs px-1.5 py-0.5 rounded-full bg-orange-50 text-orange-600 border border-orange-200 shrink-0">Outsourced</span>
+                          <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-orange-50 text-orange-600 border border-orange-200">Outsourced</span>
                         )}
                       </div>
                     </div>
@@ -510,7 +514,7 @@ export default function UnitsOnOfferPage() {
 
       {/* Empty state */}
       {total === 0 && (
-        <div className="text-center py-16 text-slate-400">
+        <div className="text-center py-12 sm:py-16 text-slate-400">
           <BookOpen size={32} className="mx-auto mb-3 opacity-40" />
           <p className="text-sm">No units on offer for the current term.</p>
           <p className="text-xs mt-1">Make sure cohorts have a current term set and curriculum units are defined.</p>
