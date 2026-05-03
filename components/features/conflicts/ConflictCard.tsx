@@ -30,10 +30,10 @@ export default function ConflictCard({ conflict, onResolve }: Props) {
   const isPending = conflict.resolution_status === 'PENDING'
 
   return (
-    <div className={cn('rounded-xl border p-4 space-y-3', SEVERITY_STYLES[conflict.severity] ?? 'border-gray-200 bg-white')}>
+    <div className={cn('conflict-card fit-card rounded-xl border p-4 space-y-3', SEVERITY_STYLES[conflict.severity] ?? 'border-gray-200 bg-white')}>
 
       {/* Top row */}
-      <div className="flex items-start justify-between gap-3">
+      <div className="conflict-actions flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
           <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-semibold', SEVERITY_BADGE[conflict.severity])}>
             {conflict.severity}

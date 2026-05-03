@@ -77,7 +77,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-white/40">
               {section.label}
             </p>
-            <ul className="space-y-0.5">
+            <ul className="space-y-0.5 responsive-list lg:flex-col">
               {section.items.map(({ href, icon: Icon, label }) => {
                 const active = pathname === href || pathname.startsWith(href + '/')
                 return (

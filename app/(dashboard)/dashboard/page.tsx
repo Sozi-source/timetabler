@@ -132,7 +132,7 @@ const draftUnits = term?.drafts ?? 0
       }
 
       {/* ── Stat Cards ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="stat-grid">
         <StatCard
           label="Cohorts"
           value={total_cohorts}
@@ -175,7 +175,7 @@ const draftUnits = term?.drafts ?? 0
                 View master →
               </button>
             </div>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="rounded-lg bg-gray-50 p-3 text-center border border-gray-100">
                 <p className="text-2xl font-semibold text-gray-900">{scheduled_units}</p>
                 <p className="text-xs text-gray-500 mt-1">Scheduled</p>
@@ -209,7 +209,7 @@ const draftUnits = term?.drafts ?? 0
           {/* Quick actions */}
           <div>
             <p className="text-sm font-medium text-gray-900 mb-3">Quick actions</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 timetable-actions">
               {/* Generate */}
               <button
                 onClick={handleGenerate}

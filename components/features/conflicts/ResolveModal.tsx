@@ -117,8 +117,9 @@ export default function ResolveModal({ conflict, termId, onClose }: Props) {
   const isPending = conflict.resolution_status === 'PENDING'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg overflow-hidden flex flex-col max-h-[92svh] sm:max-h-[90vh]">
+        <span className="block w-10 h-1 bg-gray-200 rounded-full mx-auto mt-2.5 sm:hidden" />
 
         {/* Header */}
         <div className={`px-6 py-4 ${sev.bg} ${sev.border} border-b flex items-start justify-between gap-4`}>

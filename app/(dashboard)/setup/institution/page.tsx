@@ -54,7 +54,7 @@ export default function InstitutionPage() {
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-2">Teaching Days</label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 max-w-sm">
               {ALL_DAYS.map(d => (
                 <button key={d} onClick={()=>toggleDay(d)} className={
                   'rounded-lg px-3 py-1.5 text-xs font-medium border transition-colors ' +

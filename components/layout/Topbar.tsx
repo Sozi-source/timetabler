@@ -262,7 +262,7 @@ export default function Topbar({ title, onMenuClick }: TopbarProps) {
 
         {/* Week badge — only for active term */}
         {activeTerm && (
-          <span className="hidden rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs text-amber-700 font-medium lg:inline">
+          <span className="topbar-week-badge hidden rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs text-amber-700 font-medium lg:inline">
             Wk {activeTerm.week_number} · {activeTerm.weeks_remaining}w left
           </span>
         )}

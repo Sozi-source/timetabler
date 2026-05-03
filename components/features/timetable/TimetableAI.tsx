@@ -358,7 +358,7 @@ export default function TimetableAI() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-[380px] max-h-[560px] flex flex-col rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden">
+        <div className="fixed bottom-24 right-2 sm:right-6 z-50 w-[calc(100vw-1rem)] sm:w-[380px] max-h-[560px] flex flex-col rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden">
 
           {/* Header */}
           <div className="flex items-center gap-3 bg-[#1e3a5f] px-4 py-3.5 shrink-0">

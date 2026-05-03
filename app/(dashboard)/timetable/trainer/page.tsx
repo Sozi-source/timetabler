@@ -71,7 +71,7 @@ export default function TrainerTimetableListPage() {
               <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
                 Active — {active.length} trainers
               </h2>
-              <div className="grid gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {active.map(trainer => (
                   <TrainerCard
                     key={trainer.id}
@@ -89,7 +89,7 @@ export default function TrainerTimetableListPage() {
               <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
                 Inactive — {inactive.length} trainers
               </h2>
-              <div className="grid gap-3 opacity-60">
+              <div className="grid gap-3 sm:grid-cols-2 opacity-60">
                 {inactive.map(trainer => (
                   <TrainerCard
                     key={trainer.id}

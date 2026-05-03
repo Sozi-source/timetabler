@@ -58,7 +58,7 @@ export default function TrainerPanel({ unitId, unitName, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/30 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-md h-full bg-white shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+      <div className="w-full sm:max-w-md h-full bg-white shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4 shrink-0">
           <div>
             <h2 className="text-base font-bold text-gray-900">Qualified Trainers</h2>

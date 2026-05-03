@@ -802,7 +802,7 @@ export default function TimetablePage() {
       )}
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="timetable-header">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Master Timetable</h1>
           <p className="text-sm text-gray-500 mt-0.5">
@@ -813,7 +813,7 @@ export default function TimetablePage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="timetable-actions flex items-center gap-2 flex-wrap">
           {/* Status badge */}
           <span className={cn(
             'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border',
@@ -931,7 +931,7 @@ export default function TimetablePage() {
 
       {/* Cohort pills */}
       {cohorts.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="cohort-pills">
           <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
             {cohorts.length} cohort{cohorts.length > 1 ? 's' : ''}:
           </span>

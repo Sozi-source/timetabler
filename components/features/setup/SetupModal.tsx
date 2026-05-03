@@ -16,8 +16,9 @@ interface SetupModalProps {
 export default function SetupModal({ open, title, onClose, onSave, saving, saveLabel = 'Save', valid = true, children }: SetupModalProps) {
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm">
+      <div className="w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl max-h-[92svh] sm:max-h-[90vh] flex flex-col">
+        <span className="block w-10 h-1 bg-gray-200 rounded-full mx-auto mt-2.5 sm:hidden" />
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4 shrink-0">
           <h2 className="text-base font-semibold text-gray-900">{title}</h2>
           <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100"><X className="h-4 w-4" /></button>

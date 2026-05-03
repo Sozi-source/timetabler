@@ -77,7 +77,7 @@ export default function TimetableGrid({
 
   return (
     <>
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="setup-table-wrap rounded-xl border border-gray-200 bg-white shadow-sm">
         <div
           className="grid min-w-[640px]"
           style={{ gridTemplateColumns: `80px repeat(${days.length}, minmax(120px, 1fr))` }}

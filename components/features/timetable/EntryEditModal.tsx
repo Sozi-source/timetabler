@@ -61,8 +61,9 @@ export default function EntryEditModal({ entry, trainers, rooms, periods, onClos
   if (!entry) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm">
+      <div className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl max-h-[92svh] flex flex-col overflow-hidden">
+        <span className="block w-10 h-1 bg-gray-200 rounded-full mx-auto mt-2.5 sm:hidden shrink-0" />
 
         {/* Header */}
         <div className="flex items-start justify-between border-b border-gray-100 px-6 py-4">
@@ -77,7 +78,7 @@ export default function EntryEditModal({ entry, trainers, rooms, periods, onClos
         </div>
 
         {/* Fields */}
-        <div className="px-6 py-4 space-y-4">
+        <div className="px-6 py-4 space-y-4 overflow-y-auto flex-1">
 
           {/* Day */}
           <div>

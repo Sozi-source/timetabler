@@ -58,11 +58,11 @@ export default function TrainerDashboardPage() {
         </p>
       </div>
       {dashLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-pulse">
+        <div className="stat-grid animate-pulse">
           {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-28 rounded-xl bg-gray-100" />)}
         </div>
       ) : dash ? (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="stat-grid">
           <div className="rounded-xl border border-gray-200 bg-white shadow-sm px-5 py-4 space-y-2">
             <div className="flex items-center gap-2 text-gray-500">
               <BookOpen className="h-4 w-4" />

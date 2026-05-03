@@ -36,7 +36,7 @@ export default function EntryCard({ entry, colourIndex, onClick }: EntryCardProp
     <button
       onClick={() => onClick(entry)}
       className={cn(
-        'w-full text-left rounded-md border p-1.5 text-xs transition-opacity hover:opacity-80 active:scale-[0.98]',
+        'fit-card w-full text-left rounded-md border p-1.5 text-xs transition-opacity hover:opacity-80 active:scale-[0.98]',
         colour,
         entry.status === 'CANCELLED' && 'opacity-50 line-through'
       )}

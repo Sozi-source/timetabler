@@ -17,7 +17,7 @@ export default function AppShell({ children, title }: AppShellProps) {
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="lg:pl-60">
         <Topbar title={title} onMenuClick={() => setSidebarOpen(true)} />
-        <main className="p-4 lg:p-6">{children}</main>
+        <main className="p-3 sm:p-4 lg:p-6 min-w-0">{children}</main>
       </div>
     </div>
   )

@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store'
 import { saveToken } from '@/lib/auth'
 import api from '@/lib/api'
 import type { AuthUser } from '@/types'
-import { Calendar, Loader2 } from 'lucide-react'
+import { Calendar, Loader2, Eye, EyeOff } from 'lucide-react'
 
 export default function LoginPage() {
   // No useRouter — we use window.location.href after login to avoid
@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
+  const [showPwd, setShowPwd] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -71,7 +72,9 @@ export default function LoginPage() {
   return (
     <div className="w-full max-w-sm">
       {/* Card */}
-      <div className="rounded-2xl bg-white shadow-2xl p-8">
+      <div className="rounded-2xl bg-white shadow-2xl overflow-hidden">
+        <div className="h-1 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400" />
+        <div className="p-6 sm:p-8">
         {/* Header */}
         <div className="mb-8 flex flex-col items-center gap-2">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#1e3a5f]">
@@ -102,14 +105,23 @@ export default function LoginPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Password
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#1e3a5f] focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20"
-              placeholder="Enter your password"
-            />
+            <div className="relative">
+              <input
+                type={showPwd ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-400 focus:border-[#1e3a5f] focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20"
+                placeholder="Enter your password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPwd(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -127,6 +139,7 @@ export default function LoginPage() {
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
+        </div>
       </div>
 
       <p className="mt-4 text-center text-xs text-white/50">

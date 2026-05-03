@@ -614,8 +614,9 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
   const programmeResolved = !!selectedProgramme
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm">
+      <div className="w-full sm:max-w-xl rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl flex flex-col max-h-[92svh] sm:max-h-[90vh]">
+        <span className="block w-10 h-1 bg-gray-200 rounded-full mx-auto mt-2.5 sm:hidden shrink-0" />
 
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4 shrink-0">

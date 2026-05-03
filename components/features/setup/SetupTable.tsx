@@ -54,7 +54,7 @@ export default function SetupTable<T extends { id: string }>({
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-x-auto">
+    <div className="setup-table-wrap rounded-xl border border-gray-200 bg-white shadow-sm">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50 text-left">

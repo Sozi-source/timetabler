@@ -152,7 +152,7 @@ export default function ConstraintsPage() {
     <div className="space-y-4">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Constraints</h1>
           <p className="text-sm text-gray-500 mt-0.5">
@@ -161,7 +161,7 @@ export default function ConstraintsPage() {
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors"
+          className="flex items-center gap-2 rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors w-full sm:w-auto justify-center"
         >
           <Plus className="h-4 w-4" />
           Add constraint
@@ -194,7 +194,7 @@ export default function ConstraintsPage() {
 
       {/* Table */}
       {!isLoading && constraints.length > 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-x-auto">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-x-auto min-w-0">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50 text-left">
