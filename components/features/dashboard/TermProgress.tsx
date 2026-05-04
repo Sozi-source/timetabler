@@ -10,45 +10,63 @@ export default function TermProgress({ term }: { term: DashboardTerm }) {
     : 0
 
   const weekNum = term.current_week ?? term.week_number ?? 0
+  const isComplete = pct >= 100
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+      {/* Top row */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
         <div>
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Active term</p>
-          <p className="mt-1 text-lg font-bold text-gray-900">{term.name}</p>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Active term</p>
+          <p className="mt-1.5 text-lg font-bold text-gray-900 leading-tight">{term.name}</p>
           {term.start_date && (
-            <p className="text-xs text-gray-400 mt-0.5">{term.start_date} — {term.end_date}</p>
+            <p className="text-xs text-gray-400 mt-1 font-mono">
+              {term.start_date} — {term.end_date}
+            </p>
           )}
         </div>
-        <div className="flex flex-wrap gap-4 sm:gap-6">
+
+        {/* Stats cluster */}
+        <div className="flex gap-5 sm:gap-6 shrink-0">
           <div className="text-right">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Week</p>
-            <p className="text-2xl font-bold text-[#1e3a5f] mt-1">{weekNum}</p>
-            <p className="text-xs text-gray-400">of {term.teaching_weeks}</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Week</p>
+            <p className="text-2xl font-bold text-[#1e3a5f] mt-1 tabular-nums leading-none">{weekNum}</p>
+            <p className="text-xs text-gray-400 mt-0.5">of {term.teaching_weeks}</p>
           </div>
           <div className="text-right">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Remaining</p>
-            <p className="text-2xl font-bold text-[#1e3a5f] mt-1">{term.weeks_remaining}</p>
-            <p className="text-xs text-gray-400">weeks</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Remaining</p>
+            <p className="text-2xl font-bold text-[#1e3a5f] mt-1 tabular-nums leading-none">{term.weeks_remaining}</p>
+            <p className="text-xs text-gray-400 mt-0.5">weeks</p>
           </div>
           <div className="text-right">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Complete</p>
-            <p className={`text-2xl font-bold mt-1 ${pct >= 100 ? 'text-emerald-600' : 'text-[#1e3a5f]'}`}>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Complete</p>
+            <p className={[
+              'text-2xl font-bold mt-1 tabular-nums leading-none',
+              isComplete ? 'text-emerald-600' : 'text-[#1e3a5f]',
+            ].join(' ')}>
               {pct}%
             </p>
           </div>
         </div>
       </div>
+
+      {/* Progress bar */}
       <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
         <div
-          className="h-full rounded-full bg-amber-400 transition-all duration-700"
+          className={[
+            'h-full rounded-full transition-all duration-700',
+            isComplete ? 'bg-emerald-500' : 'bg-amber-400',
+          ].join(' ')}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <div className="mt-1.5 flex justify-between text-xs text-gray-400">
+
+      {/* Date labels */}
+      <div className="mt-2 flex justify-between text-[10px] text-gray-400 font-mono">
         <span>{term.start_date ?? ''}</span>
-        <span>{pct}% complete</span>
+        <span className={isComplete ? 'text-emerald-600 font-bold' : 'font-medium text-gray-500'}>
+          {pct}% complete
+        </span>
         <span>{term.end_date ?? ''}</span>
       </div>
     </div>

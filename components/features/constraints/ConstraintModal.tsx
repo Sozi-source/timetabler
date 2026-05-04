@@ -29,6 +29,7 @@ const RULES = [
     icon: Pin,
     description: 'Always scheduled on this exact day and session',
     activeColor: 'bg-[#1e3a5f] border-[#1e3a5f] text-white',
+    activeRing: 'ring-1 ring-[#1e3a5f]/30',
   },
   {
     value: 'AVOID_DAY',
@@ -36,6 +37,7 @@ const RULES = [
     icon: Ban,
     description: 'Never placed on the selected day(s)',
     activeColor: 'bg-red-600 border-red-600 text-white',
+    activeRing: 'ring-1 ring-red-300',
   },
   {
     value: 'PREFERRED_ROOM',
@@ -43,6 +45,7 @@ const RULES = [
     icon: Home,
     description: 'Scheduler prefers this room when placing',
     activeColor: 'bg-teal-600 border-teal-600 text-white',
+    activeRing: 'ring-1 ring-teal-300',
   },
 ]
 
@@ -58,10 +61,8 @@ type RuleType = 'PIN_DAY_PERIOD' | 'AVOID_DAY' | 'PREFERRED_ROOM'
 
 interface RuleConfig {
   rule: RuleType
-  // PIN_DAY_PERIOD — now multi-day + multi-period
-  days?: string[]       // replaces single `day`
-  periodIds?: string[]  // replaces single `periodId`
-  // legacy single-value fields (kept for edit-mode back-compat)
+  days?: string[]
+  periodIds?: string[]
   day?: string
   avoidDays?: string[]
   periodId?: string
@@ -70,7 +71,6 @@ interface RuleConfig {
   isActive: boolean
 }
 
-// null = use default, false = skip this unit, RuleConfig = custom
 type UnitOverride = null | false | RuleConfig
 
 interface UnitEntry {
@@ -139,11 +139,18 @@ function RuleEditor({
               key={r.value}
               onClick={() => onChange({ ...config, rule: r.value as RuleType })}
               className={[
-                'flex items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-xs font-medium transition-all',
-                active ? r.activeColor : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50',
+                'flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-xs font-medium transition-all active:scale-[.98]',
+                active
+                  ? `${r.activeColor} ${r.activeRing} shadow-sm`
+                  : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50',
               ].join(' ')}
             >
-              <Icon className="h-3.5 w-3.5 shrink-0" />
+              <div className={[
+                'flex h-6 w-6 shrink-0 items-center justify-center rounded-lg',
+                active ? 'bg-white/20' : 'bg-gray-100',
+              ].join(' ')}>
+                <Icon className="h-3.5 w-3.5 shrink-0" />
+              </div>
               <div>
                 <p className="font-semibold">{r.label}</p>
                 {!compact && (
@@ -161,8 +168,8 @@ function RuleEditor({
       {config.rule === 'PIN_DAY_PERIOD' && (
         <>
           <div>
-            <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">
-              Days <span className="text-gray-400 font-normal">(select all that apply)</span>
+            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
+              Days <span className="text-gray-400 font-normal normal-case tracking-normal">(select all that apply)</span>
             </p>
             <div className="flex gap-1.5">
               {DAYS.map(d => {
@@ -178,10 +185,10 @@ function RuleEditor({
                       })
                     }}
                     className={[
-                      'flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-all',
+                      'flex-1 rounded-xl border py-2 text-xs font-bold transition-all active:scale-[.95]',
                       active
-                        ? 'bg-[#1e3a5f] border-[#1e3a5f] text-white'
-                        : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+                        ? 'bg-[#1e3a5f] border-[#1e3a5f] text-white shadow-sm ring-1 ring-[#1e3a5f]/30'
+                        : 'border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-gray-300',
                     ].join(' ')}
                   >
                     {d.label}
@@ -191,8 +198,8 @@ function RuleEditor({
             </div>
           </div>
           <div>
-            <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">
-              Sessions <span className="text-gray-400 font-normal">(select all that apply)</span>
+            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
+              Sessions <span className="text-gray-400 font-normal normal-case tracking-normal">(select all that apply)</span>
             </p>
             <div className="flex flex-col gap-1.5">
               {periods.map(p => {
@@ -208,15 +215,18 @@ function RuleEditor({
                       })
                     }}
                     className={[
-                      'flex items-center justify-between rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all',
+                      'flex items-center justify-between rounded-xl border px-3 py-2 text-xs font-semibold transition-all active:scale-[.98]',
                       active
-                        ? 'bg-[#1e3a5f] border-[#1e3a5f] text-white'
-                        : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+                        ? 'bg-[#1e3a5f] border-[#1e3a5f] text-white shadow-sm ring-1 ring-[#1e3a5f]/30'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300',
                     ].join(' ')}
                   >
                     <span>{p.label}</span>
                     {p.start_time && (
-                      <span className={['text-[10px] font-normal', active ? 'opacity-70' : 'text-gray-400'].join(' ')}>
+                      <span className={[
+                        'text-[10px] font-mono font-normal',
+                        active ? 'opacity-60' : 'text-gray-400',
+                      ].join(' ')}>
                         {p.start_time.slice(0, 5)}
                       </span>
                     )}
@@ -226,25 +236,27 @@ function RuleEditor({
             </div>
             {/* Summary pill */}
             {(config.days ?? []).length > 0 && (config.periodIds ?? []).length > 0 && (
-              <p className="mt-2 text-[10px] text-gray-500">
-                Will create{' '}
-                <span className="font-semibold text-[#1e3a5f]">
-                  {(config.days ?? []).length} day{(config.days ?? []).length !== 1 ? 's' : ''} ×{' '}
-                  {(config.periodIds ?? []).length} session{(config.periodIds ?? []).length !== 1 ? 's' : ''} ={' '}
-                  {(config.days ?? []).length * (config.periodIds ?? []).length} constraint{(config.days ?? []).length * (config.periodIds ?? []).length !== 1 ? 's' : ''}
-                </span>{' '}
-                for this unit.
-              </p>
+              <div className="mt-2.5 rounded-xl bg-[#1e3a5f]/5 border border-[#1e3a5f]/10 px-3 py-2">
+                <p className="text-[10px] text-gray-600">
+                  Will create{' '}
+                  <span className="font-bold text-[#1e3a5f]">
+                    {(config.days ?? []).length} day{(config.days ?? []).length !== 1 ? 's' : ''} ×{' '}
+                    {(config.periodIds ?? []).length} session{(config.periodIds ?? []).length !== 1 ? 's' : ''} ={' '}
+                    {(config.days ?? []).length * (config.periodIds ?? []).length} constraint{(config.days ?? []).length * (config.periodIds ?? []).length !== 1 ? 's' : ''}
+                  </span>{' '}
+                  for this unit.
+                </p>
+              </div>
             )}
           </div>
           <div>
-            <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">
-              Preferred Room <span className="text-gray-300 font-normal">(optional)</span>
+            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
+              Preferred Room <span className="text-gray-400 font-normal normal-case tracking-normal">(optional)</span>
             </p>
             <select
               value={config.roomId ?? ''}
               onChange={e => onChange({ ...config, roomId: e.target.value })}
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] hover:border-gray-300 transition-colors"
             >
               <option value="">Any available room</option>
               {rooms.map(r => (
@@ -258,17 +270,17 @@ function RuleEditor({
       {/* AVOID_DAY */}
       {config.rule === 'AVOID_DAY' && (
         <div>
-          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Days to Avoid</p>
+          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Days to Avoid</p>
           <div className="flex gap-1.5">
             {DAYS.map(d => (
               <button
                 key={d.value}
                 onClick={() => toggleAvoidDay(d.value)}
                 className={[
-                  'flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-all',
+                  'flex-1 rounded-xl border py-2 text-xs font-bold transition-all active:scale-[.95]',
                   (config.avoidDays ?? []).includes(d.value)
-                    ? 'bg-red-600 border-red-600 text-white'
-                    : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+                    ? 'bg-red-600 border-red-600 text-white shadow-sm ring-1 ring-red-300'
+                    : 'border-gray-200 text-gray-500 hover:bg-red-50 hover:border-red-200',
                 ].join(' ')}
               >
                 {d.label}
@@ -281,11 +293,11 @@ function RuleEditor({
       {/* PREFERRED_ROOM */}
       {config.rule === 'PREFERRED_ROOM' && (
         <div>
-          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Room</p>
+          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Room</p>
           <select
             value={config.roomId ?? ''}
             onChange={e => onChange({ ...config, roomId: e.target.value })}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] hover:border-gray-300 transition-colors"
           >
             <option value="">Select room…</option>
             {rooms.map(r => (
@@ -297,14 +309,14 @@ function RuleEditor({
 
       {/* Notes */}
       <div>
-        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">
-          Label <span className="text-gray-300 font-normal">(optional)</span>
+        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
+          Label <span className="text-gray-400 font-normal normal-case tracking-normal">(optional)</span>
         </p>
         <input
           value={config.notes ?? ''}
           onChange={e => onChange({ ...config, notes: e.target.value })}
           placeholder="e.g. Fixed clinical slot"
-          className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+          className="w-full rounded-xl border border-gray-200 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] hover:border-gray-300 transition-colors placeholder:text-gray-300"
         />
       </div>
     </div>
@@ -341,8 +353,6 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
   })
   const programmes = unwrap<RawProgramme>(progsRaw)
 
-  // FIX: robust programme lookup — tries programme_id UUID first, then falls
-  // back to matching by code or name against the cohort's programme string
   const selectedProgramme = programmes.find(p =>
     (selectedCohort?.programme_id && p.id === selectedCohort.programme_id) ||
     p.id === selectedCohort?.programme ||
@@ -361,7 +371,6 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
     queryFn:  () =>
       api.get(`/curriculum/?programme=${selectedProgramme!.id}&term_number=${termNum}`)
         .then(r => r.data),
-    // FIX: enabled only when we have a resolved programme ID
     enabled: open && !!cohortId && !!selectedProgramme?.id,
     staleTime: 0,
   })
@@ -415,14 +424,10 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cohortUnitsRaw, partnerUnitsRaw])
 
-  // ── Reset when cohort changes ──────────────────────────────────────────
-
   useEffect(() => {
     setUnits([])
     setActiveUnit(null)
   }, [cohortId])
-
-  // ── Reset on open/close ────────────────────────────────────────────────
 
   useEffect(() => {
     if (!open) return
@@ -430,7 +435,6 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
       setCohortId(constraint.cohort ?? '')
       setDefaultRule({
         rule:      (constraint.rule as RuleType) ?? 'PIN_DAY_PERIOD',
-        // Populate both array and legacy scalar fields for edit back-compat
         days:      (constraint.parameters?.day as string)
                      ? [(constraint.parameters.day as string)]
                      : [],
@@ -471,8 +475,6 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
 
   const configuredUnits = units.filter(u => effectiveConfig(u) !== false)
 
-  // ── Validation ─────────────────────────────────────────────────────────
-
   function isRuleValid(cfg: RuleConfig): boolean {
     if (cfg.rule === 'PIN_DAY_PERIOD')
       return !!(cfg.days?.length && cfg.periodIds?.length)
@@ -481,12 +483,8 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
     return false
   }
 
-  // FIX: step 0 only requires a cohort — default rule is optional
   const step0Valid = !!cohortId
-  // FIX: step 1 can proceed as long as units loaded (even if none configured)
   const step1Valid = !loadingUnits && !fetchingUnits
-
-  // ── Payload builder ────────────────────────────────────────────────────
 
   function buildParams(cfg: RuleConfig, day: string, periodId: string): object {
     if (cfg.rule === 'PIN_DAY_PERIOD')
@@ -500,7 +498,6 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
 
   function buildPayloads(): object[] {
     if (isEdit && constraint) {
-      // Edit: single constraint — preserve original day/period for back-compat
       const cfg = defaultRule
       const day      = cfg.days?.[0] ?? cfg.day ?? ''
       const periodId = cfg.periodIds?.[0] ?? cfg.periodId ?? ''
@@ -516,7 +513,6 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
       }]
     }
 
-    // Create: fan out each configured unit × each day × each period
     const payloads: object[] = []
     for (const u of configuredUnits) {
       const cfg      = effectiveConfig(u) as RuleConfig
@@ -553,8 +549,6 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
     return payloads
   }
 
-  // ── Render helpers ─────────────────────────────────────────────────────
-
   function ruleSummary(cfg: RuleConfig): string {
     if (cfg.rule === 'PIN_DAY_PERIOD') {
       const dayStr = (cfg.days ?? [cfg.day]).filter(Boolean).join(', ') || '?'
@@ -571,9 +565,6 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
     return '—'
   }
 
-  // ── Submit ─────────────────────────────────────────────────────────────
-
-  // Total constraints that will actually be saved (PIN fans out per day×period)
   const totalPayloadCount = (() => {
     if (isEdit) return 1
     let count = 0
@@ -609,14 +600,13 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
   if (!open) return null
 
   const STEP_LABELS = ['Setup', 'Units', 'Review']
-
-  // ── Programme debug info (dev only) ────────────────────────────────────
   const programmeResolved = !!selectedProgramme
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm">
       <div className="w-full sm:max-w-xl rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl flex flex-col max-h-[92svh] sm:max-h-[90vh]">
-        <span className="block w-10 h-1 bg-gray-200 rounded-full mx-auto mt-2.5 sm:hidden shrink-0" />
+        {/* Drag handle (mobile) */}
+        <span className="block w-10 h-1 bg-gray-200 rounded-full mx-auto mt-3 sm:hidden shrink-0" />
 
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4 shrink-0">
@@ -625,24 +615,26 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
               {isEdit ? 'Edit Constraint' : 'Add Constraints'}
             </h2>
             {!isEdit && (
-              <div className="flex items-center gap-2 mt-1.5">
+              <div className="flex items-center gap-1.5 mt-2">
                 {STEP_LABELS.map((label, i) => (
                   <div key={i} className="flex items-center gap-1.5">
                     <div className={[
-                      'flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold transition-colors',
+                      'flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold transition-all duration-200',
                       i < step  ? 'bg-emerald-500 text-white' :
-                      i === step ? 'bg-[#1e3a5f] text-white' :
-                                  'bg-gray-200 text-gray-500',
+                      i === step ? 'bg-[#1e3a5f] text-white ring-2 ring-[#1e3a5f]/20' :
+                                  'bg-gray-100 text-gray-400',
                     ].join(' ')}>
                       {i < step ? <Check className="h-3 w-3" /> : i + 1}
                     </div>
                     <span className={[
                       'text-xs',
-                      i === step ? 'font-semibold text-gray-800' : 'text-gray-400',
+                      i === step ? 'font-bold text-gray-900' : 'text-gray-400',
                     ].join(' ')}>
                       {label}
                     </span>
-                    {i < STEP_LABELS.length - 1 && <ChevronRight className="h-3 w-3 text-gray-300" />}
+                    {i < STEP_LABELS.length - 1 && (
+                      <ChevronRight className="h-3 w-3 text-gray-300" />
+                    )}
                   </div>
                 ))}
               </div>
@@ -650,7 +642,7 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 transition-colors"
+            className="rounded-xl p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -661,48 +653,48 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
 
           {/* ── STEP 0: Cohort + Default Rule ── */}
           {(step === 0 || isEdit) && (
-            <div className="space-y-4">
+            <div className="space-y-5">
 
               {/* Cohort picker */}
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
                   <span className="inline-flex items-center gap-1.5">
-                    <Users className="h-3.5 w-3.5" /> Cohort <span className="text-red-400">*</span>
+                    <Users className="h-3.5 w-3.5" /> Cohort <span className="text-red-400 ml-0.5">*</span>
                   </span>
                 </label>
                 <select
                   value={cohortId}
                   onChange={e => setCohortId(e.target.value)}
                   disabled={isEdit}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] disabled:opacity-60"
+                  className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] disabled:opacity-60 hover:border-gray-300 transition-colors"
                 >
                   <option value="">{cohorts.length === 0 ? 'Loading…' : 'Select cohort…'}</option>
                   {cohorts.map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
-                {/* FIX: show warning if cohort selected but programme can't be resolved */}
                 {cohortId && !programmeResolved && programmes.length > 0 && (
-                  <p className="mt-1 text-[10px] text-amber-600 font-medium">
-                    ⚠ Could not resolve programme for this cohort — units may not load.
-                    Check that cohort.programme_id matches a programme in the system.
-                  </p>
+                  <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+                    <p className="text-[10px] text-amber-700 font-medium">
+                      ⚠ Could not resolve programme for this cohort — units may not load.
+                    </p>
+                  </div>
                 )}
               </div>
 
               {/* Default rule toggle */}
               {!isEdit && cohortId && (
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                      Default Rule <span className="text-gray-400 font-normal">(optional)</span>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                      Default Rule <span className="text-gray-400 font-normal normal-case tracking-normal">(optional)</span>
                     </label>
                     <button
                       onClick={() => setApplyDefault(v => !v)}
                       className={[
-                        'text-[10px] font-semibold px-2.5 py-1 rounded-full transition-colors',
+                        'text-[10px] font-bold px-2.5 py-1 rounded-full transition-all active:scale-[.97]',
                         applyDefault
-                          ? 'bg-[#1e3a5f] text-white'
+                          ? 'bg-[#1e3a5f] text-white ring-1 ring-[#1e3a5f]/30'
                           : 'bg-gray-100 text-gray-500 hover:bg-gray-200',
                       ].join(' ')}
                     >
@@ -710,7 +702,7 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
                     </button>
                   </div>
                   {applyDefault ? (
-                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                    <div className="rounded-2xl border border-gray-200 bg-gray-50/50 p-4">
                       <RuleEditor
                         config={defaultRule}
                         onChange={setDefaultRule}
@@ -719,7 +711,7 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
                       />
                     </div>
                   ) : (
-                    <div className="rounded-xl border border-dashed border-gray-300 px-4 py-3 text-xs text-gray-400 text-center">
+                    <div className="rounded-2xl border border-dashed border-gray-300 px-4 py-4 text-xs text-gray-400 text-center">
                       No default — configure each unit individually in the next step
                     </div>
                   )}
@@ -728,7 +720,7 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
 
               {/* Edit mode rule editor */}
               {isEdit && (
-                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <div className="rounded-2xl border border-gray-200 bg-gray-50/50 p-4">
                   <RuleEditor
                     config={defaultRule}
                     onChange={setDefaultRule}
@@ -751,7 +743,6 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
                   : 'No default set. Click each unit to configure a constraint.'}
               </p>
 
-              {/* Programme not resolved warning */}
               {!programmeResolved && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
                   ⚠ Programme could not be resolved for this cohort. No units to display.
@@ -759,11 +750,11 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
               )}
 
               {(loadingUnits || fetchingUnits) ? (
-                <div className="flex items-center justify-center gap-2 py-8 text-xs text-gray-400">
+                <div className="flex items-center justify-center gap-2 py-10 text-xs text-gray-400">
                   <Loader2 className="h-4 w-4 animate-spin" /> Loading units…
                 </div>
               ) : units.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-gray-300 px-4 py-8 text-center text-xs text-gray-400">
+                <div className="rounded-2xl border border-dashed border-gray-300 px-4 py-8 text-center text-xs text-gray-400">
                   {programmeResolved
                     ? 'No units on offer for this cohort in the current term.'
                     : 'Select a valid cohort to load units.'}
@@ -781,63 +772,65 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
                       <div
                         key={unit.id}
                         className={[
-                          'rounded-xl border transition-all',
+                          'rounded-2xl border transition-all',
                           skipped    ? 'border-gray-100 bg-gray-50 opacity-60' :
-                          hasCustom  ? 'border-amber-200 bg-amber-50' :
-                          applyDefault && isRuleValid(defaultRule) ? 'border-emerald-200 bg-emerald-50/30' :
-                          'border-dashed border-gray-300 bg-white',
+                          hasCustom  ? 'border-amber-200 bg-amber-50/60' :
+                          applyDefault && isRuleValid(defaultRule) ? 'border-emerald-200 bg-emerald-50/40' :
+                          'border-dashed border-gray-200 bg-white',
                         ].join(' ')}
                       >
                         {/* Unit header row */}
                         <div
-                          className="flex items-center gap-3 px-3 py-2.5 cursor-pointer select-none"
+                          className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none"
                           onClick={() => setActiveUnit(isOpen ? null : unit.id)}
                         >
-                          <BookOpen className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-gray-100">
+                            <BookOpen className="h-3.5 w-3.5 text-gray-400" />
+                          </div>
                           <div className="flex-1 min-w-0">
                             <span className="text-xs font-bold text-gray-800">{unit.code}</span>
                             <span className="text-xs text-gray-500 ml-1.5">{unit.name}</span>
                           </div>
                           {unit.is_combined && (
-                            <span className="shrink-0 rounded-full bg-amber-100 text-amber-700 px-1.5 py-0.5 text-[9px] font-bold uppercase">
+                            <span className="shrink-0 rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-[9px] font-bold uppercase ring-1 ring-amber-200">
                               Combined
                             </span>
                           )}
                           {/* Status badge */}
                           {skipped ? (
-                            <span className="shrink-0 text-[10px] text-gray-400 font-medium">Skip</span>
+                            <span className="shrink-0 text-[10px] text-gray-400 font-medium bg-gray-100 rounded-full px-2 py-0.5">Skip</span>
                           ) : hasCustom ? (
                             <span className={[
-                              'shrink-0 text-[10px] font-semibold',
-                              isValid ? 'text-amber-600' : 'text-red-500',
+                              'shrink-0 text-[10px] font-bold rounded-full px-2 py-0.5',
+                              isValid ? 'text-amber-700 bg-amber-100 ring-1 ring-amber-200' : 'text-red-600 bg-red-50 ring-1 ring-red-200',
                             ].join(' ')}>
                               {isValid ? 'Custom' : 'Incomplete'}
                             </span>
                           ) : applyDefault && isRuleValid(defaultRule) ? (
-                            <span className="shrink-0 text-[10px] text-emerald-600 font-medium">Default</span>
+                            <span className="shrink-0 text-[10px] text-emerald-700 font-bold bg-emerald-100 rounded-full px-2 py-0.5 ring-1 ring-emerald-200">Default</span>
                           ) : applyDefault ? (
-                            <span className="shrink-0 text-[10px] text-amber-500 font-medium">Default incomplete</span>
+                            <span className="shrink-0 text-[10px] text-amber-600 font-medium bg-amber-50 rounded-full px-2 py-0.5">Incomplete</span>
                           ) : (
                             <span className="shrink-0 text-[10px] text-gray-400">Not set</span>
                           )}
                           <ChevronRight className={[
-                            'h-3.5 w-3.5 text-gray-400 transition-transform shrink-0',
+                            'h-3.5 w-3.5 text-gray-400 transition-transform duration-150 shrink-0',
                             isOpen ? 'rotate-90' : '',
                           ].join(' ')} />
                         </div>
 
                         {/* Expanded editor */}
                         {isOpen && (
-                          <div className="border-t border-gray-100 px-3 py-3 space-y-3">
+                          <div className="border-t border-gray-100 px-4 py-4 space-y-3">
                             {/* Action buttons */}
                             <div className="flex gap-2">
                               <button
                                 onClick={() => updateUnitOverride(unit.id, null)}
                                 className={[
-                                  'flex-1 rounded-lg border py-1.5 text-[10px] font-semibold transition-all',
+                                  'flex-1 rounded-xl border py-1.5 text-[10px] font-bold transition-all active:scale-[.97]',
                                   unit.override === null
-                                    ? 'bg-[#1e3a5f] border-[#1e3a5f] text-white'
-                                    : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+                                    ? 'bg-[#1e3a5f] border-[#1e3a5f] text-white ring-1 ring-[#1e3a5f]/30'
+                                    : 'border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300',
                                 ].join(' ')}
                               >
                                 {applyDefault ? 'Use default' : 'No constraint'}
@@ -852,10 +845,10 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
                                   )
                                 }
                                 className={[
-                                  'flex-1 rounded-lg border py-1.5 text-[10px] font-semibold transition-all',
+                                  'flex-1 rounded-xl border py-1.5 text-[10px] font-bold transition-all active:scale-[.97]',
                                   unit.override !== null && unit.override !== false
-                                    ? 'bg-amber-500 border-amber-500 text-white'
-                                    : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+                                    ? 'bg-amber-500 border-amber-500 text-white ring-1 ring-amber-300'
+                                    : 'border-gray-200 text-gray-600 hover:bg-amber-50 hover:border-amber-200',
                                 ].join(' ')}
                               >
                                 Custom rule
@@ -863,10 +856,10 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
                               <button
                                 onClick={() => updateUnitOverride(unit.id, false)}
                                 className={[
-                                  'flex-1 rounded-lg border py-1.5 text-[10px] font-semibold transition-all',
+                                  'flex-1 rounded-xl border py-1.5 text-[10px] font-bold transition-all active:scale-[.97]',
                                   unit.override === false
-                                    ? 'bg-gray-500 border-gray-500 text-white'
-                                    : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+                                    ? 'bg-gray-500 border-gray-500 text-white ring-1 ring-gray-400'
+                                    : 'border-gray-200 text-gray-600 hover:bg-gray-100',
                                 ].join(' ')}
                               >
                                 Skip unit
@@ -886,7 +879,7 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
 
                             {/* Default preview */}
                             {unit.override === null && applyDefault && (
-                              <div className="rounded-lg bg-white border border-gray-200 px-3 py-2 text-xs text-gray-500">
+                              <div className="rounded-xl bg-white border border-gray-200 px-3 py-2.5 text-xs text-gray-500">
                                 {isRuleValid(defaultRule)
                                   ? <>Will use default: <span className="font-semibold text-gray-700">{ruleSummary(defaultRule)}</span></>
                                   : <span className="text-amber-600">Default rule is incomplete — finish it in Step 1 (Setup).</span>
@@ -910,18 +903,18 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
                 {configuredUnits.length === 0
                   ? 'No constraints configured.'
                   : <>
-                      <span className="font-semibold text-gray-700">{configuredUnits.length}</span> constraint{configuredUnits.length !== 1 ? 's' : ''} will be saved for{' '}
-                      <span className="font-semibold text-gray-700">{cohorts.find(c => c.id === cohortId)?.name}</span>.
+                      <span className="font-bold text-gray-800">{configuredUnits.length}</span> constraint{configuredUnits.length !== 1 ? 's' : ''} will be saved for{' '}
+                      <span className="font-bold text-gray-800">{cohorts.find(c => c.id === cohortId)?.name}</span>.
                     </>
                 }
               </p>
 
               {configuredUnits.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-gray-300 px-4 py-8 text-center text-xs text-gray-400">
+                <div className="rounded-2xl border border-dashed border-gray-300 px-4 py-10 text-center text-xs text-gray-400">
                   No constraints configured. Go back to set up a default or configure individual units.
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100 rounded-xl border border-gray-200 overflow-hidden">
+                <div className="divide-y divide-gray-100 rounded-2xl border border-gray-200 overflow-hidden">
                   {configuredUnits.map(u => {
                     const cfg      = effectiveConfig(u) as RuleConfig
                     const isCustom = u.override !== null && u.override !== false
@@ -929,38 +922,38 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
                     return (
                       <div key={u.id} className={[
                         'flex items-center gap-3 px-4 py-3',
-                        valid ? 'bg-white' : 'bg-red-50',
+                        valid ? 'bg-white hover:bg-gray-50/50' : 'bg-red-50',
                       ].join(' ')}>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-xs font-bold text-gray-800">{u.code}</span>
                             {u.is_combined && (
-                              <span className="rounded-full bg-amber-100 text-amber-700 px-1.5 py-0.5 text-[9px] font-bold uppercase">
+                              <span className="rounded-full bg-amber-100 text-amber-700 px-1.5 py-0.5 text-[9px] font-bold uppercase ring-1 ring-amber-200">
                                 Combined
                               </span>
                             )}
                             {isCustom && (
-                              <span className="rounded-full bg-amber-100 text-amber-700 px-1.5 py-0.5 text-[9px] font-bold uppercase">
+                              <span className="rounded-full bg-amber-100 text-amber-700 px-1.5 py-0.5 text-[9px] font-bold uppercase ring-1 ring-amber-200">
                                 Custom
                               </span>
                             )}
                             {!valid && (
-                              <span className="rounded-full bg-red-100 text-red-600 px-1.5 py-0.5 text-[9px] font-bold uppercase">
+                              <span className="rounded-full bg-red-100 text-red-600 px-1.5 py-0.5 text-[9px] font-bold uppercase ring-1 ring-red-200">
                                 Incomplete
                               </span>
                             )}
                           </div>
-                          <p className="text-[10px] text-gray-500 truncate">{u.name}</p>
+                          <p className="text-[10px] text-gray-400 truncate mt-0.5">{u.name}</p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-[10px] font-semibold text-gray-700">
+                          <p className="text-[10px] font-bold text-gray-700">
                             {cfg.rule.replace(/_/g, ' ')}
                           </p>
-                          <p className="text-[10px] text-gray-400">{ruleSummary(cfg)}</p>
+                          <p className="text-[10px] text-gray-400 font-mono">{ruleSummary(cfg)}</p>
                         </div>
                         <button
                           onClick={() => { setStep(1); setActiveUnit(u.id) }}
-                          className="text-gray-300 hover:text-gray-500 transition-colors shrink-0 ml-1"
+                          className="text-gray-300 hover:text-[#1e3a5f] transition-colors shrink-0 ml-1 rounded-lg p-1 hover:bg-gray-100"
                         >
                           <Pencil className="h-3 w-3" />
                         </button>
@@ -970,7 +963,6 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
                 </div>
               )}
 
-              {/* Skipped units */}
               {(() => {
                 const skippedCount = units.filter(u => effectiveConfig(u) === false).length
                 return skippedCount > 0 ? (
@@ -980,9 +972,9 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
                 ) : null
               })()}
 
-              {/* Incomplete warning */}
               {configuredUnits.some(u => !isRuleValid(effectiveConfig(u) as RuleConfig)) && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+                <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-600 flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0" />
                   Some constraints are incomplete. Fix them before saving.
                 </div>
               )}
@@ -996,7 +988,7 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
             {!isEdit && step > 0 && (
               <button
                 onClick={() => setStep(s => s - 1)}
-                className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors active:scale-[.97]"
               >
                 <ChevronLeft className="h-4 w-4" /> Back
               </button>
@@ -1006,35 +998,32 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+              className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors active:scale-[.97]"
             >
               Cancel
             </button>
 
-            {/* Edit mode */}
             {isEdit && (
               <button
                 onClick={() => mutation.mutate()}
                 disabled={mutation.isPending || !isRuleValid(defaultRule)}
-                className="flex items-center gap-2 rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#162d4a] disabled:opacity-50 transition-colors"
+                className="flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-4 py-2 text-sm font-bold text-white hover:bg-[#162d4a] disabled:opacity-50 transition-colors active:scale-[.97] shadow-sm"
               >
                 {mutation.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
                 Update
               </button>
             )}
 
-            {/* Create — Next */}
             {!isEdit && step < 2 && (
               <button
                 onClick={() => setStep(s => s + 1)}
                 disabled={step === 0 ? !step0Valid : !step1Valid}
-                className="flex items-center gap-2 rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#162d4a] disabled:opacity-50 transition-colors"
+                className="flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-4 py-2 text-sm font-bold text-white hover:bg-[#162d4a] disabled:opacity-50 transition-colors active:scale-[.97] shadow-sm"
               >
                 Next <ChevronRight className="h-4 w-4" />
               </button>
             )}
 
-            {/* Create — Save */}
             {!isEdit && step === 2 && (
               <button
                 onClick={() => mutation.mutate()}
@@ -1044,7 +1033,7 @@ export default function ConstraintModal({ constraint, open, onClose }: Props) {
                   totalPayloadCount === 0 ||
                   configuredUnits.some(u => !isRuleValid(effectiveConfig(u) as RuleConfig))
                 }
-                className="flex items-center gap-2 rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#162d4a] disabled:opacity-50 transition-colors"
+                className="flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-4 py-2 text-sm font-bold text-white hover:bg-[#162d4a] disabled:opacity-50 transition-colors active:scale-[.97] shadow-sm"
               >
                 {mutation.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
                 Save {totalPayloadCount} Constraint{totalPayloadCount !== 1 ? 's' : ''}

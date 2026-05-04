@@ -65,11 +65,13 @@ export default function TimetableGrid({
 
   const teachingPeriods = periods.filter(p => !p.is_break)
 
+  // ── Loading skeleton ──────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="animate-pulse space-y-2">
+      <div className="animate-pulse space-y-2 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div className="h-8 w-full rounded-lg bg-[#1e3a5f]/8 mb-3" />
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-16 sm:h-20 rounded-lg bg-gray-100" />
+          <div key={i} className="h-16 sm:h-20 rounded-xl bg-gray-100" />
         ))}
       </div>
     )
@@ -77,28 +79,29 @@ export default function TimetableGrid({
 
   return (
     <>
-      {/* Outer wrapper — horizontal scroll on small screens */}
-      <div className="w-full overflow-x-auto rounded-xl border-2 border-[#1e3a5f]/20 bg-white shadow-md">
+      {/* ── Outer wrapper — horizontal scroll on small screens ── */}
+      <div className="w-full overflow-x-auto rounded-2xl border border-[#1e3a5f]/15 bg-white shadow-md ring-1 ring-black/[0.03]">
         <div
           className="grid"
           style={{
-            gridTemplateColumns: `64px repeat(${days.length}, minmax(100px, 1fr))`,
-            minWidth: `${64 + days.length * 100}px`,
+            gridTemplateColumns: `72px repeat(${days.length}, minmax(110px, 1fr))`,
+            minWidth: `${72 + days.length * 110}px`,
           }}
         >
-          {/* ── Header row ── */}
+
+          {/* ── Header row ─────────────────────────────────────── */}
 
           {/* Corner cell */}
-          <div className="border-b-2 border-r-2 border-[#1e3a5f]/20 bg-[#1e3a5f]/5 p-2" />
+          <div className="border-b-2 border-r-2 border-[#1e3a5f]/15 bg-[#1e3a5f]/[0.04] p-2" />
 
           {/* Day headers */}
           {days.map((day, di) => (
             <div
               key={day}
               className={[
-                'border-b-2 border-[#1e3a5f]/20 bg-[#1e3a5f]/5',
-                'px-2 sm:px-3 py-2 text-center',
-                'text-[10px] sm:text-xs font-bold text-[#1e3a5f] uppercase tracking-widest',
+                'border-b-2 border-[#1e3a5f]/15 bg-[#1e3a5f]/[0.04]',
+                'px-2 sm:px-3 py-2.5 text-center',
+                'text-[10px] sm:text-[11px] font-bold text-[#1e3a5f] uppercase tracking-widest',
                 di < days.length - 1 ? 'border-r border-[#1e3a5f]/10' : '',
               ].join(' ')}
             >
@@ -106,19 +109,20 @@ export default function TimetableGrid({
             </div>
           ))}
 
-          {/* ── Period rows ── */}
+          {/* ── Period rows ────────────────────────────────────── */}
           {periods.map((period, pi) => {
-            const isLastPeriod = pi === periods.length - 1
+            const isLast = pi === periods.length - 1
 
+            // ── Break row ─────────────────────────────────────────
             if (period.is_break) {
               return (
                 <div key={period.id} className="contents">
                   {/* Break label cell */}
                   <div className={[
-                    'border-r-2 border-[#1e3a5f]/20 bg-amber-50/60 px-2 py-1.5 flex items-center',
-                    !isLastPeriod ? 'border-b border-amber-200/60' : '',
+                    'border-r-2 border-[#1e3a5f]/15 bg-amber-50/70 px-2 py-1.5 flex items-center',
+                    !isLast ? 'border-b border-amber-200/50' : '',
                   ].join(' ')}>
-                    <span className="text-[9px] sm:text-[10px] font-semibold text-amber-500 uppercase tracking-wide">
+                    <span className="text-[9px] sm:text-[10px] font-bold text-amber-500 uppercase tracking-widest">
                       {period.label}
                     </span>
                   </div>
@@ -128,13 +132,13 @@ export default function TimetableGrid({
                     <div
                       key={day}
                       className={[
-                        'bg-amber-50/40 flex items-center justify-center',
-                        !isLastPeriod ? 'border-b border-amber-200/40' : '',
-                        di < days.length - 1 ? 'border-r border-amber-200/30' : '',
+                        'bg-amber-50/40 flex items-center justify-center py-2',
+                        !isLast ? 'border-b border-amber-200/40' : '',
+                        di < days.length - 1 ? 'border-r border-amber-200/25' : '',
                       ].join(' ')}
                     >
-                      <span className="text-[9px] sm:text-[10px] text-amber-300 tracking-widest font-medium">
-                        BREAK
+                      <span className="text-[9px] sm:text-[10px] text-amber-300/80 tracking-widest font-semibold uppercase">
+                        break
                       </span>
                     </div>
                   ))}
@@ -142,20 +146,23 @@ export default function TimetableGrid({
               )
             }
 
+            // ── Teaching period row ───────────────────────────────
             return (
               <div key={period.id} className="contents">
+
                 {/* Period label cell */}
                 <div className={[
-                  'border-r-2 border-[#1e3a5f]/20 bg-[#1e3a5f]/[0.03] px-2 py-2 min-h-[80px] sm:min-h-[96px]',
-                  !isLastPeriod ? 'border-b border-[#1e3a5f]/10' : '',
+                  'border-r-2 border-[#1e3a5f]/15 bg-[#1e3a5f]/[0.025]',
+                  'px-2 py-2.5 min-h-[88px] sm:min-h-[104px]',
+                  !isLast ? 'border-b border-[#1e3a5f]/8' : '',
                 ].join(' ')}>
-                  <p className="text-[10px] sm:text-[11px] font-bold text-[#1e3a5f]/70 leading-tight">
+                  <p className="text-[10px] sm:text-[11px] font-bold text-[#1e3a5f]/60 leading-tight">
                     {period.label}
                   </p>
-                  <p className="text-[9px] sm:text-[10px] text-gray-400 mt-1 tabular-nums">
+                  <p className="text-[9px] sm:text-[10px] text-gray-400 mt-1.5 tabular-nums font-mono">
                     {period.start_time?.slice(0, 5)}
                   </p>
-                  <p className="text-[9px] sm:text-[10px] text-gray-400 tabular-nums">
+                  <p className="text-[9px] sm:text-[10px] text-gray-300 tabular-nums font-mono">
                     {period.end_time?.slice(0, 5)}
                   </p>
                 </div>
@@ -169,12 +176,10 @@ export default function TimetableGrid({
                     <div
                       key={day}
                       className={[
-                        'p-1 sm:p-1.5 min-h-[80px] sm:min-h-[96px] space-y-1 transition-colors',
-                        hasEntries ? 'bg-white' : 'bg-gray-50/40 hover:bg-gray-50',
-                        !isLastPeriod ? 'border-b border-[#1e3a5f]/10' : '',
-                        di < days.length - 1 ? 'border-r border-[#1e3a5f]/10' : '',
-                        // Accent left border on cells that have entries
-                        hasEntries ? 'relative' : '',
+                        'p-1 sm:p-1.5 min-h-[88px] sm:min-h-[104px] space-y-1 transition-colors',
+                        hasEntries ? 'bg-white' : 'bg-gray-50/30 hover:bg-gray-50/60',
+                        !isLast ? 'border-b border-[#1e3a5f]/8' : '',
+                        di < days.length - 1 ? 'border-r border-[#1e3a5f]/8' : '',
                       ].join(' ')}
                     >
                       {cellEntries.map(entry => (
@@ -182,7 +187,7 @@ export default function TimetableGrid({
                           key={entry.id}
                           entry={entry}
                           colourIndex={(cohortColourMap.get(entry.cohort ?? '') ?? 0) % 10}
-                          onClick={(e) => { if (!readOnly) setSelected(e) }}
+                          onClick={e => { if (!readOnly) setSelected(e) }}
                         />
                       ))}
                     </div>

@@ -37,14 +37,20 @@ export default function SetupTable<T extends { id: string }>({
 
   if (rows.length === 0) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white px-5 py-14 text-center">
-        {emptyIcon && <div className="flex justify-center mb-3 text-gray-200">{emptyIcon}</div>}
-        <p className="text-sm font-medium text-gray-500">{emptyMsg}</p>
+      <div className="rounded-2xl border border-gray-200 bg-white px-5 py-14 text-center">
+        {emptyIcon && (
+          <div className="flex justify-center mb-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-100 text-gray-300">
+              {emptyIcon}
+            </div>
+          </div>
+        )}
+        <p className="text-sm font-semibold text-gray-500">{emptyMsg}</p>
         {emptySub && <p className="text-xs text-gray-400 mt-1">{emptySub}</p>}
         {onEmptyAdd && (
           <button
             onClick={onEmptyAdd}
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors"
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-4 py-2 text-sm font-bold text-white hover:bg-[#162d4a] transition-colors active:scale-[.97] shadow-sm"
           >
             Add first record
           </button>
@@ -54,12 +60,16 @@ export default function SetupTable<T extends { id: string }>({
   }
 
   return (
-    <div className="setup-table-wrap rounded-xl border border-gray-200 bg-white shadow-sm">
+    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-100 bg-gray-50 text-left">
+          <tr className="border-b border-gray-100 bg-gray-50/80 text-left">
             {cols.map(c => (
-              <th key={c.header} className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide" style={c.width ? { width: c.width } : {}}>
+              <th
+                key={c.header}
+                className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest"
+                style={c.width ? { width: c.width } : {}}
+              >
                 {c.header}
               </th>
             ))}
@@ -68,21 +78,35 @@ export default function SetupTable<T extends { id: string }>({
         </thead>
         <tbody className="divide-y divide-gray-100">
           {rows.map(row => (
-            <tr key={row.id} className="hover:bg-gray-50 transition-colors">
+            <tr key={row.id} className="hover:bg-gray-50/60 transition-colors group">
               {cols.map(c => (
-                <td key={c.header} className="px-4 py-3 text-gray-800">{c.render(row)}</td>
+                <td key={c.header} className="px-4 py-3 text-gray-800">
+                  {c.render(row)}
+                </td>
               ))}
               {(onEdit || onDelete) && (
                 <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-1">
+                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {onEdit && (
-                      <button onClick={() => onEdit(row)} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors" title="Edit">
+                      <button
+                        onClick={() => onEdit(row)}
+                        className="rounded-xl p-1.5 text-gray-400 hover:bg-gray-100 hover:text-[#1e3a5f] transition-colors"
+                        title="Edit"
+                      >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                     )}
                     {onDelete && (
-                      <button onClick={() => onDelete(row)} disabled={deletingId === row.id} className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors" title="Delete">
-                        {deletingId === row.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                      <button
+                        onClick={() => onDelete(row)}
+                        disabled={deletingId === row.id}
+                        className="rounded-xl p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors"
+                        title="Delete"
+                      >
+                        {deletingId === row.id
+                          ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          : <Trash2 className="h-3.5 w-3.5" />
+                        }
                       </button>
                     )}
                   </div>

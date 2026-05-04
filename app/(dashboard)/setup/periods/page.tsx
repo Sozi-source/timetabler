@@ -23,7 +23,6 @@ const BLANK = {
 
 type PeriodForm = typeof BLANK
 
-// Helper: get start time from period regardless of field name
 function getStart(p: Period): string {
   return (p.start ?? p.start_time ?? '').slice(0, 5)
 }
@@ -110,7 +109,6 @@ export default function PeriodsPage() {
   }
 
   const sorted = [...periods].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-
   const isValid = form.label.trim().length > 0 && form.start < form.end
 
   return (
@@ -134,36 +132,36 @@ export default function PeriodsPage() {
             header: '#',
             width: '48px',
             render: p => (
-              <span className="text-gray-400 text-xs font-mono">{p.order ?? '—'}</span>
+              <span className="text-gray-400 text-xs font-mono tabular-nums">{p.order ?? '—'}</span>
             ),
           },
           {
             header: 'Label',
             render: p => (
-              <span className="font-medium text-gray-900">{p.label || '—'}</span>
+              <span className="font-semibold text-gray-800">{p.label || '—'}</span>
             ),
           },
           {
             header: 'Start',
             render: p => (
-              <span className="font-mono text-sm text-gray-700">{getStart(p) || '—'}</span>
+              <span className="font-mono text-sm text-gray-700 tabular-nums">{getStart(p) || '—'}</span>
             ),
           },
           {
             header: 'End',
             render: p => (
-              <span className="font-mono text-sm text-gray-700">{getEnd(p) || '—'}</span>
+              <span className="font-mono text-sm text-gray-700 tabular-nums">{getEnd(p) || '—'}</span>
             ),
           },
           {
             header: 'Duration',
             render: p => {
               const duration = p.duration ?? p.duration_hours
-              if (!duration) return <span className="text-gray-400">—</span>
+              if (!duration) return <span className="text-gray-400 text-xs">—</span>
               const h = Math.floor(duration)
               const m = Math.round((duration - h) * 60)
               return (
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-600 tabular-nums font-mono">
                   {h > 0 ? `${h}h ` : ''}{m > 0 ? `${m}m` : ''}
                 </span>
               )
@@ -173,10 +171,10 @@ export default function PeriodsPage() {
             header: 'Type',
             render: p => (
               <span className={cn(
-                'rounded-full px-2 py-0.5 text-xs font-medium',
+                'rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1',
                 p.is_break
-                  ? 'bg-gray-100 text-gray-600'
-                  : 'bg-blue-100 text-blue-700'
+                  ? 'bg-gray-50 text-gray-500 ring-gray-200'
+                  : 'bg-blue-50 text-blue-700 ring-blue-200'
               )}>
                 {p.is_break ? 'Break' : 'Teaching'}
               </span>
@@ -193,67 +191,76 @@ export default function PeriodsPage() {
         saving={saveMutation.isPending}
         valid={isValid}
       >
+        {/* Label */}
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
-            Label <span className="text-red-400">*</span>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+            Label <span className="text-red-400 normal-case tracking-normal font-normal">*</span>
           </label>
           <input
             value={form.label}
             onChange={e => set('label', e.target.value)}
             placeholder="e.g. Period 1"
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+            className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition-colors"
           />
         </div>
 
+        {/* Time range */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Start time <span className="text-red-400">*</span>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+              Start time <span className="text-red-400 normal-case tracking-normal font-normal">*</span>
             </label>
             <input
               type="time"
               value={form.start}
               onChange={e => set('start', e.target.value)}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition-colors"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              End time <span className="text-red-400">*</span>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+              End time <span className="text-red-400 normal-case tracking-normal font-normal">*</span>
             </label>
             <input
               type="time"
               value={form.end}
               onChange={e => set('end', e.target.value)}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition-colors"
             />
           </div>
         </div>
 
         {form.start && form.end && form.start >= form.end && (
-          <p className="text-xs text-red-500 -mt-1">End time must be after start time.</p>
+          <p className="text-xs text-red-500 -mt-1 flex items-center gap-1">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-400" />
+            End time must be after start time.
+          </p>
         )}
 
+        {/* Order */}
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Display order</label>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+            Display order
+          </label>
           <input
             type="number"
             min={1}
             value={form.order}
             onChange={e => set('order', Math.max(1, Number(e.target.value)))}
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+            className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition-colors"
           />
-          <p className="text-xs text-gray-400 mt-1">Periods are displayed in ascending order.</p>
+          <p className="text-xs text-gray-400 mt-1.5">Periods are displayed in ascending order.</p>
         </div>
 
-        <label className="flex items-center gap-3 cursor-pointer select-none">
+        {/* Break toggle */}
+        <div className="rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3 flex items-center gap-4">
           <button
             type="button"
             role="switch"
             aria-checked={form.is_break}
             onClick={() => set('is_break', !form.is_break)}
             className={cn(
-              'relative inline-flex h-5 w-9 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] focus:ring-offset-1',
+              'relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] focus:ring-offset-1',
               form.is_break ? 'bg-[#1e3a5f]' : 'bg-gray-300'
             )}
           >
@@ -263,10 +270,10 @@ export default function PeriodsPage() {
             )} />
           </button>
           <div>
-            <span className="text-sm text-gray-700 font-medium">Break / recess</span>
-            <p className="text-xs text-gray-400">Break periods are skipped by the scheduler.</p>
+            <span className="text-sm text-gray-800 font-semibold">Break / recess</span>
+            <p className="text-xs text-gray-400 mt-0.5">Break periods are skipped by the scheduler.</p>
           </div>
-        </label>
+        </div>
       </SetupModal>
     </SetupShell>
   )

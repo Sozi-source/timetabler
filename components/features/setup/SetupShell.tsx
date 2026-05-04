@@ -10,9 +10,11 @@ interface SetupShellProps {
   children: React.ReactNode
 }
 
-export default function SetupShell({ title, subtitle, onAdd, addLabel = 'Add', children }: SetupShellProps) {
+export default function SetupShell({
+  title, subtitle, onAdd, addLabel = 'Add', children,
+}: SetupShellProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-gray-900">{title}</h1>
@@ -21,9 +23,10 @@ export default function SetupShell({ title, subtitle, onAdd, addLabel = 'Add', c
         {onAdd && (
           <button
             onClick={onAdd}
-            className="flex items-center gap-2 rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors w-full sm:w-auto justify-center"
+            className="flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-4 py-2 text-sm font-bold text-white hover:bg-[#162d4a] transition-colors active:scale-[.97] shadow-sm ring-1 ring-[#1e3a5f]/10 w-full sm:w-auto justify-center"
           >
-            <Plus className="h-4 w-4" />{addLabel}
+            <Plus className="h-4 w-4" />
+            {addLabel}
           </button>
         )}
       </div>

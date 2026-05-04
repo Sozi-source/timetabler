@@ -27,10 +27,10 @@ const EMPLOYMENT_TYPES: { value: EmploymentType; label: string }[] = [
 ]
 
 const EMPLOYMENT_COLOURS: Record<string, string> = {
-  FT: 'bg-emerald-100 text-emerald-700',
-  PT: 'bg-blue-100   text-blue-700',
-  VS: 'bg-purple-100 text-purple-700',
-  CT: 'bg-orange-100 text-orange-700',
+  FT: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  PT: 'bg-blue-50 text-blue-700 ring-blue-200',
+  VS: 'bg-purple-50 text-purple-700 ring-purple-200',
+  CT: 'bg-orange-50 text-orange-700 ring-orange-200',
 }
 
 const BLANK = {
@@ -77,7 +77,6 @@ export default function TrainersPage() {
     }))
   }
 
-  // When dept changes, auto-fill institution_id from the selected dept
   function handleDeptChange(deptId: string) {
     const dept = depts.find(d => d.id === deptId)
     setForm(p => ({
@@ -87,7 +86,6 @@ export default function TrainersPage() {
     }))
   }
 
-  // Derive employment type code from display string for badge colour
   function empCode(t: Trainer): string {
     return t.employment_type_code
       ?? EMPLOYMENT_TYPE_CODE[t.employment_type]
@@ -105,13 +103,9 @@ export default function TrainersPage() {
 
   function openEdit(t: Trainer) {
     setEditing(t)
-
-    // department comes back as a display string e.g. "ICT – Computer Science"
-    // Try to match it back to a UUID from the loaded depts list
     const matchedDept = depts.find(d =>
       t.department?.includes(d.code) || t.department?.includes(d.name)
     )
-
     setForm({
       title:                t.title                ?? 'Mr',
       first_name:           t.first_name            ?? '',
@@ -121,7 +115,6 @@ export default function TrainersPage() {
       staff_id:             t.staff_id              ?? '',
       department_id:        t.department_id         ?? matchedDept?.id ?? '',
       institution_id:       t.institution_id        ?? matchedDept?.institution_id ?? '',
-      // employment_type comes back as "Full-time" — convert to code "FT"
       employment_type:      (EMPLOYMENT_TYPE_CODE[t.employment_type] ?? t.employment_type_code ?? 'FT') as EmploymentType,
       max_periods_per_week: t.max_periods_per_week  ?? 20,
       available_days:       (t.available_days       ?? []) as DayCode[],
@@ -142,7 +135,6 @@ export default function TrainersPage() {
 
   const saveMutation = useMutation({
     mutationFn: () => {
-      // Exact fields expected by TrainerWriteSerializer
       const payload = {
         title:                form.title,
         first_name:           form.first_name,
@@ -233,11 +225,11 @@ export default function TrainersPage() {
             header: 'Name',
             render: t => (
               <div>
-                <span className="font-medium text-gray-900">
+                <span className="font-semibold text-gray-800">
                   {[t.title, t.first_name, t.last_name].filter(Boolean).join(' ') || '—'}
                 </span>
                 {t.email && (
-                  <span className="block text-xs text-gray-400">{t.email}</span>
+                  <span className="block text-xs text-gray-400 mt-0.5">{t.email}</span>
                 )}
               </div>
             ),
@@ -246,7 +238,7 @@ export default function TrainersPage() {
             header: 'Staff ID',
             width: '100px',
             render: t => (
-              <code className="text-xs bg-gray-100 rounded px-1.5 py-0.5 font-mono">
+              <code className="text-xs bg-gray-50 ring-1 ring-gray-200 rounded-lg px-2 py-0.5 font-mono text-gray-700">
                 {t.staff_id || '—'}
               </code>
             ),
@@ -254,7 +246,7 @@ export default function TrainersPage() {
           {
             header: 'Department',
             render: t => (
-              <span className="text-sm text-gray-700">{t.department || '—'}</span>
+              <span className="text-sm text-gray-600">{t.department || '—'}</span>
             ),
           },
           {
@@ -262,8 +254,8 @@ export default function TrainersPage() {
             width: '110px',
             render: t => (
               <span className={cn(
-                'rounded-full px-2 py-0.5 text-xs font-medium',
-                EMPLOYMENT_COLOURS[empCode(t)] ?? 'bg-gray-100 text-gray-600'
+                'rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1',
+                EMPLOYMENT_COLOURS[empCode(t)] ?? 'bg-gray-50 text-gray-600 ring-gray-200'
               )}>
                 {t.employment_type || '—'}
               </span>
@@ -273,7 +265,7 @@ export default function TrainersPage() {
             header: 'Periods/wk',
             width: '100px',
             render: t => (
-              <span className="text-sm text-gray-700 font-mono">
+              <span className="text-sm text-gray-700 font-mono tabular-nums">
                 {t.max_periods_per_week ?? '—'}
               </span>
             ),
@@ -282,11 +274,12 @@ export default function TrainersPage() {
             header: 'Days',
             render: t => {
               const days = (t.available_days ?? []) as DayCode[]
-              if (days.length === 0) return <span className="text-gray-400 text-xs">All days</span>
+              if (days.length === 0)
+                return <span className="text-gray-400 text-xs">All days</span>
               return (
                 <div className="flex flex-wrap gap-1">
                   {days.map(d => (
-                    <span key={d} className="text-xs bg-slate-100 text-slate-600 rounded px-1.5 py-0.5 font-mono">
+                    <span key={d} className="text-xs bg-slate-50 text-slate-600 ring-1 ring-slate-200 rounded-lg px-1.5 py-0.5 font-mono">
                       {DAY_SHORT[d] ?? d}
                     </span>
                   ))}
@@ -299,8 +292,10 @@ export default function TrainersPage() {
             width: '60px',
             render: t => (
               <span className={cn(
-                'inline-block h-2 w-2 rounded-full',
-                t.is_active ? 'bg-emerald-500' : 'bg-gray-300'
+                'inline-block h-2.5 w-2.5 rounded-full ring-2 ring-offset-1',
+                t.is_active
+                  ? 'bg-emerald-500 ring-emerald-200'
+                  : 'bg-gray-300 ring-gray-100'
               )} />
             ),
           },
@@ -319,62 +314,66 @@ export default function TrainersPage() {
         {/* Title + First name */}
         <div className="grid grid-cols-4 gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Title</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+              Title
+            </label>
             <select
               value={form.title}
               onChange={e => set('title', e.target.value)}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition-colors bg-white"
             >
               {TITLES.map(t => <option key={t}>{t}</option>)}
             </select>
           </div>
           <div className="col-span-3">
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              First Name <span className="text-red-400">*</span>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+              First Name <span className="text-red-400 normal-case tracking-normal font-normal">*</span>
             </label>
             <input
               value={form.first_name}
               onChange={e => set('first_name', e.target.value)}
               placeholder="e.g. Jane"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition-colors"
             />
           </div>
         </div>
 
         {/* Last name */}
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
-            Last Name <span className="text-red-400">*</span>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+            Last Name <span className="text-red-400 normal-case tracking-normal font-normal">*</span>
           </label>
           <input
             value={form.last_name}
             onChange={e => set('last_name', e.target.value)}
             placeholder="e.g. Mwangi"
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+            className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition-colors"
           />
         </div>
 
         {/* Email + Phone */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Email <span className="text-red-400">*</span>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+              Email <span className="text-red-400 normal-case tracking-normal font-normal">*</span>
             </label>
             <input
               type="email"
               value={form.email}
               onChange={e => set('email', e.target.value)}
               placeholder="jane@institution.ac.ke"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition-colors"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Phone</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+              Phone
+            </label>
             <input
               value={form.phone}
               onChange={e => set('phone', e.target.value)}
               placeholder="+254 700 000 000"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition-colors"
             />
           </div>
         </div>
@@ -382,20 +381,24 @@ export default function TrainersPage() {
         {/* Staff ID + Employment type */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Staff ID</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+              Staff ID
+            </label>
             <input
               value={form.staff_id}
               onChange={e => set('staff_id', e.target.value)}
               placeholder="e.g. TRN-001"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition-colors"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Employment type</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+              Employment type
+            </label>
             <select
               value={form.employment_type}
               onChange={e => set('employment_type', e.target.value as EmploymentType)}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition-colors bg-white"
             >
               {EMPLOYMENT_TYPES.map(t => (
                 <option key={t.value} value={t.value}>{t.label}</option>
@@ -406,13 +409,13 @@ export default function TrainersPage() {
 
         {/* Department */}
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
-            Department <span className="text-red-400">*</span>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+            Department <span className="text-red-400 normal-case tracking-normal font-normal">*</span>
           </label>
           <select
             value={form.department_id}
             onChange={e => handleDeptChange(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+            className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition-colors bg-white"
           >
             <option value="">Select department…</option>
             {depts.filter(d => d.is_active).map(d => (
@@ -420,12 +423,13 @@ export default function TrainersPage() {
             ))}
           </select>
           {form.department_id && !form.institution_id && (
-            <p className="text-xs text-red-400 mt-1">
+            <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-400" />
               Selected department has no institution linked. Check your departments setup.
             </p>
           )}
           {!form.department_id && (
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-gray-400 mt-1.5">
               Institution is set automatically from the selected department.
             </p>
           )}
@@ -433,7 +437,7 @@ export default function TrainersPage() {
 
         {/* Max periods per week */}
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
             Max periods per week
           </label>
           <input
@@ -442,19 +446,19 @@ export default function TrainersPage() {
             max={80}
             value={form.max_periods_per_week}
             onChange={e => set('max_periods_per_week', Math.min(80, Math.max(1, Number(e.target.value))))}
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+            className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition-colors"
           />
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-gray-400 mt-1.5">
             Scheduler will not assign more than this many periods per week.
           </p>
         </div>
 
         {/* Available days */}
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
             Available Days
           </label>
-          <p className="text-xs text-gray-400 mb-2">
+          <p className="text-xs text-gray-400 mb-2.5">
             For full-time staff, select all days. Used to restrict part-time / visiting trainers.
           </p>
           <div className="flex flex-wrap gap-2">
@@ -464,7 +468,7 @@ export default function TrainersPage() {
                 type="button"
                 onClick={() => toggleDay(d)}
                 className={cn(
-                  'rounded-lg px-3 py-1.5 text-xs font-medium border transition-colors',
+                  'rounded-xl px-3 py-1.5 text-xs font-semibold border transition-colors active:scale-[.97]',
                   form.available_days.includes(d)
                     ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]'
                     : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
@@ -475,21 +479,22 @@ export default function TrainersPage() {
             ))}
           </div>
           {form.available_days.length === 0 && (
-            <p className="text-xs text-amber-500 mt-1">
+            <p className="text-xs text-amber-500 mt-1.5 flex items-center gap-1">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />
               No days selected — this trainer will never be scheduled.
             </p>
           )}
         </div>
 
         {/* Active toggle */}
-        <label className="flex items-center gap-3 cursor-pointer select-none">
+        <div className="rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3 flex items-center gap-4">
           <button
             type="button"
             role="switch"
             aria-checked={form.is_active}
             onClick={() => set('is_active', !form.is_active)}
             className={cn(
-              'relative inline-flex h-5 w-9 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] focus:ring-offset-1',
+              'relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] focus:ring-offset-1',
               form.is_active ? 'bg-[#1e3a5f]' : 'bg-gray-300'
             )}
           >
@@ -499,10 +504,10 @@ export default function TrainersPage() {
             )} />
           </button>
           <div>
-            <span className="text-sm text-gray-700 font-medium">Active</span>
-            <p className="text-xs text-gray-400">Inactive trainers are excluded from scheduling.</p>
+            <span className="text-sm text-gray-800 font-semibold">Active</span>
+            <p className="text-xs text-gray-400 mt-0.5">Inactive trainers are excluded from scheduling.</p>
           </div>
-        </label>
+        </div>
       </SetupModal>
     </SetupShell>
   )

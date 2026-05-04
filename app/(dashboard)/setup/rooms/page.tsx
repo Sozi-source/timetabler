@@ -16,27 +16,27 @@ import { cn } from '@/lib/utils'
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const ROOM_TYPES: { value: RoomType; label: string }[] = [
-  { value: 'CLASSROOM', label: 'Classroom'     },
-  { value: 'LAB',       label: 'Laboratory'    },
-  { value: 'COMPUTER',  label: 'Computer Lab'  },
-  { value: 'CLINICAL',  label: 'Clinical Lab'  },
-  { value: 'WORKSHOP',  label: 'Workshop'      },
-  { value: 'SEMINAR',   label: 'Seminar Room'  },
-  { value: 'HALL',      label: 'Lecture Hall'  },
-  { value: 'ONLINE',    label: 'Online/Virtual'},
-  { value: 'OTHER',     label: 'Other'         },
+  { value: 'CLASSROOM', label: 'Classroom'      },
+  { value: 'LAB',       label: 'Laboratory'     },
+  { value: 'COMPUTER',  label: 'Computer Lab'   },
+  { value: 'CLINICAL',  label: 'Clinical Lab'   },
+  { value: 'WORKSHOP',  label: 'Workshop'       },
+  { value: 'SEMINAR',   label: 'Seminar Room'   },
+  { value: 'HALL',      label: 'Lecture Hall'   },
+  { value: 'ONLINE',    label: 'Online/Virtual' },
+  { value: 'OTHER',     label: 'Other'          },
 ]
 
 const ROOM_TYPE_COLOURS: Record<string, string> = {
-  CLASSROOM: 'bg-blue-100 text-blue-700',
-  LAB:       'bg-purple-100 text-purple-700',
-  COMPUTER:  'bg-indigo-100 text-indigo-700',
-  CLINICAL:  'bg-pink-100 text-pink-700',
-  WORKSHOP:  'bg-orange-100 text-orange-700',
-  SEMINAR:   'bg-teal-100 text-teal-700',
-  HALL:      'bg-yellow-100 text-yellow-700',
-  ONLINE:    'bg-green-100 text-green-700',
-  OTHER:     'bg-gray-100 text-gray-600',
+  CLASSROOM: 'bg-blue-50 text-blue-700 ring-blue-200',
+  LAB:       'bg-purple-50 text-purple-700 ring-purple-200',
+  COMPUTER:  'bg-indigo-50 text-indigo-700 ring-indigo-200',
+  CLINICAL:  'bg-pink-50 text-pink-700 ring-pink-200',
+  WORKSHOP:  'bg-orange-50 text-orange-700 ring-orange-200',
+  SEMINAR:   'bg-teal-50 text-teal-700 ring-teal-200',
+  HALL:      'bg-yellow-50 text-yellow-700 ring-yellow-200',
+  ONLINE:    'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  OTHER:     'bg-gray-50 text-gray-600 ring-gray-200',
 }
 
 const BLANK = {
@@ -46,7 +46,7 @@ const BLANK = {
   room_type: 'CLASSROOM' as RoomType,
   building:  '',
   floor:     0,
-  features:  '',          // comma-separated string in form; array when sent to API
+  features:  '',
   is_active: true,
 }
 
@@ -100,10 +100,7 @@ export default function RoomsPage() {
     mutationFn: () => {
       const payload = {
         ...form,
-        features: form.features
-          .split(',')
-          .map(s => s.trim())
-          .filter(Boolean),
+        features: form.features.split(',').map(s => s.trim()).filter(Boolean),
       }
       return editing
         ? api.put(`/rooms/${editing.id}/`, payload).then(r => r.data)
@@ -144,7 +141,8 @@ export default function RoomsPage() {
     delMutation.mutate(r.id)
   }
 
-  const isValid = form.code.trim().length > 0 &&
+  const isValid =
+    form.code.trim().length > 0 &&
     form.name.trim().length > 0 &&
     form.capacity >= 1
 
@@ -174,7 +172,7 @@ export default function RoomsPage() {
             header: 'Code',
             width: '90px',
             render: r => (
-              <code className="text-xs bg-gray-100 rounded px-1.5 py-0.5 font-mono">
+              <code className="text-xs bg-gray-50 ring-1 ring-gray-200 rounded-lg px-2 py-0.5 font-mono text-gray-700">
                 {r.code ?? '—'}
               </code>
             ),
@@ -183,9 +181,9 @@ export default function RoomsPage() {
             header: 'Name',
             render: r => (
               <div>
-                <span className="font-medium text-gray-900">{r.name ?? '—'}</span>
+                <span className="font-semibold text-gray-800">{r.name ?? '—'}</span>
                 {r.building && (
-                  <span className="block text-xs text-gray-400">
+                  <span className="block text-xs text-gray-400 mt-0.5">
                     {r.building}{r.floor != null ? `, Floor ${r.floor}` : ''}
                   </span>
                 )}
@@ -196,18 +194,18 @@ export default function RoomsPage() {
             header: 'Type',
             render: r => (
               <span className={cn(
-                'rounded-full px-2 py-0.5 text-xs font-medium',
-                ROOM_TYPE_COLOURS[r.room_type] ?? 'bg-gray-100 text-gray-600'
+                'rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1',
+                ROOM_TYPE_COLOURS[r.room_type] ?? 'bg-gray-50 text-gray-600 ring-gray-200'
               )}>
                 {ROOM_TYPES.find(t => t.value === r.room_type)?.label ?? r.room_type ?? '—'}
               </span>
             ),
           },
           {
-            header: 'Capacity',
-            width: '90px',
+            header: 'Cap.',
+            width: '70px',
             render: r => (
-              <span className="text-sm text-gray-700 font-mono">
+              <span className="text-sm text-gray-700 font-mono tabular-nums">
                 {r.capacity ?? '—'}
               </span>
             ),
@@ -220,12 +218,12 @@ export default function RoomsPage() {
               return (
                 <div className="flex flex-wrap gap-1">
                   {features.slice(0, 3).map(f => (
-                    <span key={f} className="text-xs bg-slate-100 text-slate-600 rounded px-1.5 py-0.5">
+                    <span key={f} className="text-xs bg-slate-50 text-slate-600 ring-1 ring-slate-200 rounded-lg px-1.5 py-0.5">
                       {f}
                     </span>
                   ))}
                   {features.length > 3 && (
-                    <span className="text-xs text-gray-400">+{features.length - 3}</span>
+                    <span className="text-xs text-gray-400 self-center">+{features.length - 3}</span>
                   )}
                 </div>
               )
@@ -236,8 +234,10 @@ export default function RoomsPage() {
             width: '64px',
             render: r => (
               <span className={cn(
-                'inline-block h-2 w-2 rounded-full',
-                r.is_active ? 'bg-emerald-500' : 'bg-gray-300'
+                'inline-block h-2.5 w-2.5 rounded-full ring-2 ring-offset-1',
+                r.is_active
+                  ? 'bg-emerald-500 ring-emerald-200'
+                  : 'bg-gray-300 ring-gray-100'
               )} />
             ),
           },
@@ -255,50 +255,52 @@ export default function RoomsPage() {
         {/* Code + Capacity */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Code <span className="text-red-400">*</span>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+              Code <span className="text-red-400 normal-case tracking-normal font-normal">*</span>
             </label>
             <input
               value={form.code}
               onChange={e => set('code', e.target.value.toUpperCase())}
               placeholder="e.g. LH-01"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition-colors"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Capacity <span className="text-red-400">*</span>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+              Capacity <span className="text-red-400 normal-case tracking-normal font-normal">*</span>
             </label>
             <input
               type="number"
               min={1}
               value={form.capacity}
               onChange={e => set('capacity', Math.max(1, Number(e.target.value)))}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition-colors"
             />
           </div>
         </div>
 
         {/* Name */}
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
-            Name <span className="text-red-400">*</span>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+            Name <span className="text-red-400 normal-case tracking-normal font-normal">*</span>
           </label>
           <input
             value={form.name}
             onChange={e => set('name', e.target.value)}
             placeholder="e.g. Lecture Hall A"
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+            className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition-colors"
           />
         </div>
 
         {/* Room type */}
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Type</label>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+            Type
+          </label>
           <select
             value={form.room_type}
             onChange={e => set('room_type', e.target.value as RoomType)}
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+            className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition-colors bg-white"
           >
             {ROOM_TYPES.map(t => (
               <option key={t.value} value={t.value}>{t.label}</option>
@@ -309,51 +311,55 @@ export default function RoomsPage() {
         {/* Building + Floor */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Building</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+              Building
+            </label>
             <input
               value={form.building}
               onChange={e => set('building', e.target.value)}
               placeholder="e.g. Block A"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition-colors"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Floor</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+              Floor
+            </label>
             <input
               type="number"
               value={form.floor}
               onChange={e => set('floor', Number(e.target.value))}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition-colors"
             />
           </div>
         </div>
 
         {/* Features */}
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
             Features
-            <span className="text-gray-400 font-normal ml-1">(comma-separated)</span>
+            <span className="text-gray-400 font-normal normal-case tracking-normal ml-1">(comma-separated)</span>
           </label>
           <input
             value={form.features}
             onChange={e => set('features', e.target.value)}
             placeholder="projector, whiteboard, aircon"
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+            className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition-colors"
           />
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-gray-400 mt-1.5">
             Used by the scheduler to match room requirements.
           </p>
         </div>
 
         {/* Active toggle */}
-        <label className="flex items-center gap-3 cursor-pointer select-none">
+        <div className="rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3 flex items-center gap-4">
           <button
             type="button"
             role="switch"
             aria-checked={form.is_active}
             onClick={() => set('is_active', !form.is_active)}
             className={cn(
-              'relative inline-flex h-5 w-9 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] focus:ring-offset-1',
+              'relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] focus:ring-offset-1',
               form.is_active ? 'bg-[#1e3a5f]' : 'bg-gray-300'
             )}
           >
@@ -363,10 +369,10 @@ export default function RoomsPage() {
             )} />
           </button>
           <div>
-            <span className="text-sm text-gray-700 font-medium">Active</span>
-            <p className="text-xs text-gray-400">Inactive rooms are hidden from the scheduler.</p>
+            <span className="text-sm text-gray-800 font-semibold">Active</span>
+            <p className="text-xs text-gray-400 mt-0.5">Inactive rooms are hidden from the scheduler.</p>
           </div>
-        </label>
+        </div>
       </SetupModal>
     </SetupShell>
   )

@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { useTermStore } from '@/store'
 import api from '@/lib/api'
 import { toast } from 'sonner'
-import { ArrowLeft, Save, Loader2, AlertTriangle, Trash2 } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, AlertTriangle, Trash2, Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface ScheduledUnit {
@@ -63,14 +63,14 @@ function SelectField({
   placeholder?: string
 }) {
   return (
-    <div>
-      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+    <div className="space-y-1.5">
+      <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400">
         {label}
       </label>
       <select
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors text-gray-800"
+        className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-all text-gray-800 hover:border-gray-300"
       >
         <option value="">{placeholder}</option>
         {options.map(o => (
@@ -97,32 +97,27 @@ export default function TimetableEditPage() {
   const [notes, setNotes] = useState('')
   const [dirty, setDirty] = useState(false)
 
-  // Fetch current entry
   const { data: entry, isLoading } = useQuery({
     queryKey: ['timetable-entry', id],
     queryFn: () => api.get(`/timetable/entry/${id}/`).then(r => r.data.data as ScheduledUnit),
     enabled: !!id,
   })
 
-  // Fetch trainers
   const { data: trainers = [] } = useQuery({
     queryKey: ['trainers'],
     queryFn: () => api.get('/trainers/').then(r => r.data.data as Trainer[]),
   })
 
-  // Fetch rooms
   const { data: rooms = [] } = useQuery({
     queryKey: ['rooms'],
     queryFn: () => api.get('/rooms/').then(r => r.data.data as Room[]),
   })
 
-  // Fetch periods
   const { data: periods = [] } = useQuery({
     queryKey: ['periods'],
     queryFn: () => api.get('/periods/').then(r => (r.data.data as Period[]).filter(p => !p.is_break)),
   })
 
-  // Populate form when entry loads
   useEffect(() => {
     if (!entry) return
     setDay(entry.day)
@@ -137,7 +132,6 @@ export default function TimetableEditPage() {
     setDirty(true)
   }
 
-  // Save mutation
   const save = useMutation({
     mutationFn: () =>
       api.put(`/timetable/entry/${id}/`, {
@@ -157,7 +151,6 @@ export default function TimetableEditPage() {
     onError: (e: any) => toast.error(e.response?.data?.message ?? 'Update failed'),
   })
 
-  // Delete mutation
   const remove = useMutation({
     mutationFn: () => api.delete(`/timetable/entry/${id}/`),
     onSuccess: () => {
@@ -170,17 +163,31 @@ export default function TimetableEditPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 size={32} className="animate-spin text-[#1e3a5f]" />
+      <div className="max-w-xl mx-auto space-y-4 py-8">
+        <div className="h-8 w-32 rounded-lg bg-gray-100 animate-pulse" />
+        <div className="rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="h-24 bg-[#1e3a5f]/10 animate-pulse" />
+          <div className="p-6 space-y-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-11 rounded-xl bg-gray-100 animate-pulse" />
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
 
   if (!entry) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-gray-400">
-        <p className="text-lg font-medium">Entry not found</p>
-        <button onClick={() => router.push('/timetable')} className="text-sm text-[#1e3a5f] hover:underline">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <div className="h-12 w-12 rounded-2xl bg-gray-100 flex items-center justify-center">
+          <AlertTriangle className="h-5 w-5 text-gray-400" />
+        </div>
+        <p className="text-base font-semibold text-gray-600">Entry not found</p>
+        <button
+          onClick={() => router.push('/timetable')}
+          className="text-sm text-[#1e3a5f] hover:underline underline-offset-2"
+        >
           Back to Timetable
         </button>
       </div>
@@ -202,91 +209,87 @@ export default function TimetableEditPage() {
   const dayOptions = DAYS.map(d => ({ value: d, label: DAY_LABELS[d] }))
 
   return (
-    <div className="max-w-xl mx-auto space-y-6">
-      {/* Back */}
+    <div className="max-w-xl mx-auto space-y-5">
+      {/* Nav row */}
       <div className="flex items-center justify-between">
         <button
           onClick={() => router.push(`/timetable/${id}`)}
-          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors group"
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={15} className="group-hover:-translate-x-0.5 transition-transform" />
           Back to Entry
         </button>
         <button
-          onClick={() => {
-            if (confirm('Delete this entry?')) remove.mutate()
-          }}
+          onClick={() => { if (confirm('Delete this entry?')) remove.mutate() }}
           disabled={remove.isPending}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm text-red-500 hover:bg-red-50 rounded-lg border border-red-200 transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-500 hover:bg-red-50 rounded-xl border border-red-200 transition-colors disabled:opacity-50 active:scale-[.98]"
         >
-          <Trash2 size={14} />
+          {remove.isPending
+            ? <Loader2 size={13} className="animate-spin" />
+            : <Trash2 size={13} />
+          }
           Delete
         </button>
       </div>
 
       {/* Published warning */}
       {entry.status === 'PUBLISHED' && (
-        <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-          <AlertTriangle size={16} className="text-amber-500 mt-0.5 shrink-0" />
-          <p className="text-sm text-amber-700">
-            This entry is <strong>published</strong>. Editing it will affect the active timetable.
-          </p>
+        <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+          <div className="h-7 w-7 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+            <AlertTriangle size={14} className="text-amber-600" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-amber-800">Published entry</p>
+            <p className="text-xs text-amber-600 mt-0.5">
+              Editing this will affect the live timetable visible to students and trainers.
+            </p>
+          </div>
         </div>
       )}
 
-      {/* Form */}
+      {/* Form card */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         {/* Header */}
-        <div className="bg-[#1e3a5f] px-6 py-4">
-          <p className="text-blue-200 text-xs font-medium uppercase tracking-wide mb-0.5">Editing</p>
-          <h1 className="text-white text-lg font-bold">
-            {entry.curriculum_unit.code} · {entry.cohort.name}
-          </h1>
-          <p className="text-blue-200 text-sm mt-0.5">{entry.curriculum_unit.name}</p>
+        <div className="bg-[#1e3a5f] px-6 py-5 relative overflow-hidden">
+          {/* Subtle grid pattern */}
+          <div className="absolute inset-0 opacity-[0.04]"
+            style={{ backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 24px,white 24px,white 25px),repeating-linear-gradient(90deg,transparent,transparent 24px,white 24px,white 25px)' }}
+          />
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="h-5 w-5 rounded-md bg-white/10 flex items-center justify-center">
+                <Pencil size={10} className="text-blue-200" />
+              </div>
+              <p className="text-blue-300 text-[10px] font-bold uppercase tracking-widest">Editing entry</p>
+            </div>
+            <h1 className="text-white text-lg font-bold tracking-tight">
+              {entry.curriculum_unit.code}
+              <span className="text-blue-300 font-normal"> · </span>
+              {entry.cohort.name}
+            </h1>
+            <p className="text-blue-200/80 text-sm mt-0.5 font-light">{entry.curriculum_unit.name}</p>
+          </div>
         </div>
 
         <div className="p-6 space-y-5">
           <div className="grid grid-cols-2 gap-4">
-            <SelectField
-              label="Day"
-              value={day}
-              onChange={track(setDay)}
-              options={dayOptions}
-            />
-            <SelectField
-              label="Period"
-              value={periodId}
-              onChange={track(setPeriodId)}
-              options={periodOptions}
-            />
+            <SelectField label="Day" value={day} onChange={track(setDay)} options={dayOptions} />
+            <SelectField label="Period" value={periodId} onChange={track(setPeriodId)} options={periodOptions} />
           </div>
 
-          <SelectField
-            label="Trainer"
-            value={trainerId}
-            onChange={track(setTrainerId)}
-            options={trainerOptions}
-            placeholder="Unassigned"
-          />
+          <SelectField label="Trainer" value={trainerId} onChange={track(setTrainerId)} options={trainerOptions} placeholder="Unassigned" />
+          <SelectField label="Room" value={roomId} onChange={track(setRoomId)} options={roomOptions} placeholder="Unassigned" />
 
-          <SelectField
-            label="Room"
-            value={roomId}
-            onChange={track(setRoomId)}
-            options={roomOptions}
-            placeholder="Unassigned"
-          />
-
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-              Notes
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400">
+              Notes <span className="text-gray-300 font-normal normal-case tracking-normal">— optional</span>
             </label>
             <textarea
               value={notes}
               onChange={e => track(setNotes)(e.target.value)}
               rows={3}
-              placeholder="Optional notes..."
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors resize-none text-gray-800"
+              placeholder="Add any notes about this session..."
+              className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-all resize-none text-gray-800 placeholder:text-gray-300 hover:border-gray-300"
             />
           </div>
 
@@ -294,14 +297,14 @@ export default function TimetableEditPage() {
             onClick={() => save.mutate()}
             disabled={save.isPending || !dirty}
             className={cn(
-              'w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-colors',
+              'w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-[.98]',
               dirty
-                ? 'bg-[#1e3a5f] text-white hover:bg-[#162d4a]'
+                ? 'bg-[#1e3a5f] text-white hover:bg-[#162d4a] shadow-sm'
                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'
             )}
           >
             {save.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-            Save Changes
+            {dirty ? 'Save Changes' : 'No changes'}
           </button>
         </div>
       </div>
