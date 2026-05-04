@@ -1,49 +1,160 @@
 @import "tailwindcss";
 
+/* ── Google Fonts ───────────────────────────────────────────────────────────
+   Syne          → headings / display  (geometric, wide, high-impact)
+   IBM Plex Sans → body / UI           (crisp, utilitarian, trustworthy)
+   IBM Plex Mono → codes / times / IDs (precise, data-forward)
+   ────────────────────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap');
+
+/* ── Design tokens ──────────────────────────────────────────────────────── */
 :root {
   --background: #ffffff;
-  --foreground: #171717;
-  --brand: #1e3a5f;
-  --brand-dark: #162d4a;
+  --foreground: #0f172a;   /* slate-900 — cooler, more fintech than pure black */
+
+  /* Brand */
+  --brand:       #1e3a5f;
+  --brand-dark:  #162d4a;
   --brand-light: #e8eef5;
+
+  /* Accent */
+  --accent:       #f59e0b;
+  --accent-light: #fef3c7;
+
+  /* Fonts */
+  --font-display: 'Syne', ui-sans-serif, system-ui, sans-serif;
+  --font-sans:    'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono:    'IBM Plex Mono', ui-monospace, 'Cascadia Code', monospace;
+
+  /* Shape */
   --radius-card: 0.75rem;
   --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
 
+/* ── Tailwind v4 theme registration ─────────────────────────────────────── */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  /* font-sans  → IBM Plex Sans  (utility class: font-sans)  */
+  /* font-mono  → IBM Plex Mono  (utility class: font-mono)  */
+  /* font-display → Syne         (utility class: font-display) */
+  --font-sans:    var(--font-sans);
+  --font-mono:    var(--font-mono);
+  --font-display: var(--font-display);
 }
 
+/* ── Dark mode ──────────────────────────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
-    --foreground: #ededed;
+    --foreground: #f1f5f9;
   }
+}
+
+/* ── Base ────────────────────────────────────────────────────────────────── */
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  /* IBM Plex Sans optical features */
+  font-feature-settings: 'ss01', 'ss02', 'cv10';
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  font-weight: 400;
 }
 
-/* ── Responsive stat grid ── */
+/* ── Headings → Syne ─────────────────────────────────────────────────────── 
+   Syne is wide and architectural — tighten tracking significantly so it
+   reads as confident rather than spacey. Weight 700 minimum.
+   ────────────────────────────────────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;   /* Syne needs aggressive tightening */
+  line-height: 1.15;
+  color: var(--foreground);
+}
+
+h1 { font-size: 2rem;    font-weight: 800; letter-spacing: -0.04em; }
+h2 { font-size: 1.5rem;  font-weight: 700; letter-spacing: -0.03em; }
+h3 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.025em; }
+h4 { font-size: 1.125rem; font-weight: 600; }
+h5 { font-size: 1rem;    font-weight: 600; }
+h6 { font-size: 0.875rem; font-weight: 600; }
+
+/* ── Labels / section headings in UI use Syne too ───────────────────────── 
+   Apply .heading class for Syne on any non-h element
+   ────────────────────────────────────────────────────────────────────────── */
+.heading {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+/* ── Monospaced → IBM Plex Mono ──────────────────────────────────────────── */
+code, kbd, samp, pre, .font-mono {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  letter-spacing: 0;               /* reset — mono needs neutral tracking */
+}
+
+/* ── Inputs / buttons inherit IBM Plex Sans ──────────────────────────────── */
+input, select, textarea, button {
+  font-family: var(--font-sans);
+}
+
+/* ── Sidebar section labels — Syne micro-caps look sharp ────────────────── */
+.nav-label {
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.45;
+}
+
+/* ── Page titles in topbar ───────────────────────────────────────────────── */
+.page-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+/* ── Scrollbar utilities ─────────────────────────────────────────────────── */
+@utility scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #1e3a5f22 transparent;
+}
+.scrollbar-thin::-webkit-scrollbar       { width: 4px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #1e3a5f22;
+  border-radius: 99px;
+}
+
+/* ── Stat grid ───────────────────────────────────────────────────────────── */
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(1, 1fr);
   gap: 1rem;
 }
-@media (min-width: 480px) {
-  .stat-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (min-width: 768px) {
-  .stat-grid { grid-template-columns: repeat(3, 1fr); }
-}
+@media (min-width: 480px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 768px) { .stat-grid { grid-template-columns: repeat(3, 1fr); } }
 
-/* ── Stat card — professional touch ── */
+/* ── Stat card ───────────────────────────────────────────────────────────── */
 .stat-card {
   border-radius: var(--radius-card);
   border: 1px solid #e5e7eb;
@@ -67,20 +178,21 @@ body {
   transform-origin: left;
   transition: transform 0.25s ease;
 }
-.stat-card:hover {
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.12);
-  transform: translateY(-1px);
-}
+.stat-card:hover { box-shadow: 0 4px 12px rgb(0 0 0 / 0.12); transform: translateY(-1px); }
 .stat-card:hover::after { transform: scaleX(1); }
 
-/* ── Fit-card: prevent overflow on small screens ── */
-.fit-card {
-  min-width: 0;
-  word-break: break-word;
+/* Stat values use Syne for big numbers — fintech aesthetic */
+.stat-card .stat-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
 }
+
+/* ── Fit-card ────────────────────────────────────────────────────────────── */
+.fit-card { min-width: 0; word-break: break-word; }
 .fit-card * { min-width: 0; }
 
-/* ── Responsive list: stack on mobile, flex-row on lg ── */
+/* ── Responsive list ─────────────────────────────────────────────────────── */
 .responsive-list {
   display: flex;
   flex-direction: column;
@@ -90,16 +202,11 @@ body {
   margin: 0;
 }
 @media (min-width: 1024px) {
-  .responsive-list {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-  .responsive-list > * {
-    flex: 1 1 260px;
-  }
+  .responsive-list { flex-direction: row; flex-wrap: wrap; }
+  .responsive-list > * { flex: 1 1 260px; }
 }
 
-/* ── Conflict card responsive ── */
+/* ── Conflict card ───────────────────────────────────────────────────────── */
 .conflict-card {
   border-radius: var(--radius-card);
   border: 1px solid #e5e7eb;
@@ -111,14 +218,14 @@ body {
   .conflict-card .conflict-actions { flex-direction: column; align-items: stretch; }
 }
 
-/* ── Setup table: horizontal scroll on mobile ── */
+/* ── Setup table ─────────────────────────────────────────────────────────── */
 .setup-table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   border-radius: var(--radius-card);
 }
 
-/* ── Timetable header ── */
+/* ── Timetable header ────────────────────────────────────────────────────── */
 .timetable-header {
   display: flex;
   align-items: flex-start;
@@ -128,236 +235,127 @@ body {
 }
 @media (max-width: 640px) {
   .timetable-header { flex-direction: column; }
-  .timetable-actions {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    gap: 0.5rem;
-  }
+  .timetable-actions { display: flex; flex-direction: column; width: 100%; gap: 0.5rem; }
   .timetable-actions > * { width: 100%; justify-content: center; }
 }
 
-/* ── Cohort pills: wrap on small screens ── */
-.cohort-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
+/* ── Cohort pills ────────────────────────────────────────────────────────── */
+.cohort-pills { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+
+/* ── Modal ───────────────────────────────────────────────────────────────── */
+.modal-body { max-height: 90vh; overflow-y: auto; }
+@media (max-width: 640px) { .modal-body { max-height: 80vh; } }
+
+.modal-sheet {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; align-items: flex-end; justify-content: center; padding: 0;
+}
+@media (min-width: 640px) { .modal-sheet { align-items: center; padding: 1rem; } }
+
+.modal-panel {
+  width: 100%; max-height: 92svh;
+  border-radius: 1.25rem 1.25rem 0 0;
+  background: white;
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.18);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+@media (min-width: 640px) {
+  .modal-panel {
+    max-width: 32rem; max-height: 90vh;
+    border-radius: 1.25rem;
+    box-shadow: 0 25px 60px -12px rgba(0,0,0,0.35);
+  }
 }
 
-/* ── Modal: mobile-safe ── */
-.modal-body {
-  max-height: 90vh;
-  overflow-y: auto;
+.modal-drag-handle {
+  width: 2.5rem; height: 4px;
+  background: #e2e8f0; border-radius: 9999px;
+  margin: 0.625rem auto 0; display: block;
 }
-@media (max-width: 640px) {
-  .modal-body { max-height: 80vh; }
-}
+@media (min-width: 640px) { .modal-drag-handle { display: none; } }
 
-/* ── Topbar responsive ── */
+/* ── Topbar ──────────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .topbar-week-badge { display: none !important; }
   .topbar-advance-btn span { display: none; }
 }
 
-/* ── Auth layout ── */
-@media (max-width: 480px) {
-  .auth-card { padding: 1.5rem !important; }
-}
+/* ── Auth ────────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) { .auth-card { padding: 1.5rem !important; } }
 
-/* ── Responsive utilities (patch2) ─────────────────────────── */
-.page-container {
-  width: 100%;
-  max-width: 64rem;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
-@media (min-width: 640px) {
-  .page-container { padding-left: 1.5rem; padding-right: 1.5rem; }
-}
-
-/* Auth card */
 .auth-bg {
   min-height: 100svh;
   background: linear-gradient(135deg, #1e3a5f 0%, #162d4a 60%, #0f1e30 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
 }
 .auth-card {
-  width: 100%;
-  max-width: 24rem;
-  border-radius: 1.25rem;
-  background: white;
-  box-shadow: 0 25px 60px -12px rgba(0,0,0,0.4);
-  overflow: hidden;
+  width: 100%; max-width: 24rem;
+  border-radius: 1.25rem; background: white;
+  box-shadow: 0 25px 60px -12px rgba(0,0,0,0.4); overflow: hidden;
 }
 .auth-card-accent {
   height: 4px;
   background: linear-gradient(90deg, #f59e0b, #fbbf24, #f59e0b);
 }
 
-/* Setup shell header */
+/* ── Page container ──────────────────────────────────────────────────────── */
+.page-container {
+  width: 100%; max-width: 64rem;
+  margin-left: auto; margin-right: auto;
+  padding-left: 1rem; padding-right: 1rem;
+}
+@media (min-width: 640px) { .page-container { padding-left: 1.5rem; padding-right: 1.5rem; } }
+
+/* ── Setup shell header ──────────────────────────────────────────────────── */
 .setup-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;
 }
-.setup-header-add {
-  width: 100%;
-}
-@media (min-width: 480px) {
-  .setup-header-add { width: auto; }
-}
+.setup-header-add { width: 100%; }
+@media (min-width: 480px) { .setup-header-add { width: auto; } }
 
-/* Modal — bottom sheet on mobile, centered on desktop */
-.modal-sheet {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: 0;
-}
-@media (min-width: 640px) {
-  .modal-sheet {
-    align-items: center;
-    padding: 1rem;
-  }
-}
-.modal-panel {
-  width: 100%;
-  max-height: 92svh;
-  border-radius: 1.25rem 1.25rem 0 0;
-  background: white;
-  box-shadow: 0 -8px 40px rgba(0,0,0,0.18);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-@media (min-width: 640px) {
-  .modal-panel {
-    max-width: 32rem;
-    max-height: 90vh;
-    border-radius: 1.25rem;
-    box-shadow: 0 25px 60px -12px rgba(0,0,0,0.35);
-  }
-}
-.modal-drag-handle {
-  width: 2.5rem;
-  height: 4px;
-  background: #e2e8f0;
-  border-radius: 9999px;
-  margin: 0.625rem auto 0;
-  display: block;
-}
-@media (min-width: 640px) {
-  .modal-drag-handle { display: none; }
-}
-
-/* TrainerPanel — full width on mobile */
-.trainer-panel {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  justify-content: flex-end;
-}
+/* ── Trainer panel ───────────────────────────────────────────────────────── */
+.trainer-panel { position: fixed; inset: 0; z-index: 50; display: flex; justify-content: flex-end; }
 .trainer-panel-inner {
-  width: 100%;
-  max-width: 100%;
-  height: 100%;
-  background: white;
-  box-shadow: -4px 0 30px rgba(0,0,0,0.12);
-  display: flex;
-  flex-direction: column;
+  width: 100%; max-width: 100%; height: 100%;
+  background: white; box-shadow: -4px 0 30px rgba(0,0,0,0.12);
+  display: flex; flex-direction: column;
 }
-@media (min-width: 480px) {
-  .trainer-panel-inner { max-width: 28rem; }
-}
+@media (min-width: 480px) { .trainer-panel-inner { max-width: 28rem; } }
 
-/* TermProgress stats wrap */
-.term-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem 1.5rem;
-}
+/* ── Term stats ──────────────────────────────────────────────────────────── */
+.term-stats { display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; }
 
-/* Trainer cards grid */
-.trainer-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
-}
-@media (min-width: 640px) {
-  .trainer-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (min-width: 1024px) {
-  .trainer-grid { grid-template-columns: repeat(2, 1fr); }
-}
+/* ── Trainer grid ────────────────────────────────────────────────────────── */
+.trainer-grid { display: grid; grid-template-columns: 1fr; gap: 0.75rem; }
+@media (min-width: 640px) { .trainer-grid { grid-template-columns: repeat(2, 1fr); } }
 
-/* Cohort grid */
-.cohort-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
-}
-@media (min-width: 480px) {
-  .cohort-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (min-width: 1024px) {
-  .cohort-grid { grid-template-columns: repeat(3, 1fr); }
-}
+/* ── Cohort grid ─────────────────────────────────────────────────────────── */
+.cohort-grid { display: grid; grid-template-columns: 1fr; gap: 0.75rem; }
+@media (min-width: 480px)  { .cohort-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1024px) { .cohort-grid { grid-template-columns: repeat(3, 1fr); } }
 
-/* AI chat panel */
+/* ── AI chat panel ───────────────────────────────────────────────────────── */
 .ai-panel {
-  position: fixed;
-  bottom: 6rem;
-  right: 1rem;
-  z-index: 50;
-  width: calc(100vw - 2rem);
-  max-height: 560px;
-  display: flex;
-  flex-direction: column;
-  border-radius: 1rem;
-  background: white;
+  position: fixed; bottom: 6rem; right: 1rem; z-index: 50;
+  width: calc(100vw - 2rem); max-height: 560px;
+  display: flex; flex-direction: column;
+  border-radius: 1rem; background: white;
   box-shadow: 0 25px 60px rgba(0,0,0,0.2);
-  border: 1px solid #e5e7eb;
-  overflow: hidden;
+  border: 1px solid #e5e7eb; overflow: hidden;
 }
-@media (min-width: 480px) {
-  .ai-panel { width: 380px; right: 1.5rem; }
-}
+@media (min-width: 480px) { .ai-panel { width: 380px; right: 1.5rem; } }
 
-/* Institution day toggles wrap */
-.day-toggle-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
+/* ── Day toggles ─────────────────────────────────────────────────────────── */
+.day-toggle-wrap { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
-/* Units-on-offer unit row */
-.unit-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 0.875rem 1.25rem;
-}
+/* ── Unit row ────────────────────────────────────────────────────────────── */
+.unit-row { display: flex; flex-direction: column; gap: 0.75rem; padding: 0.875rem 1.25rem; }
 @media (min-width: 640px) {
-  .unit-row {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
+  .unit-row { flex-direction: row; align-items: center; justify-content: space-between; }
 }
 
-/* Constraint table scroll */
+/* ── Constraint table ────────────────────────────────────────────────────── */
 .constraint-table-wrap {
   overflow-x: auto;
   border-radius: 0.75rem;
