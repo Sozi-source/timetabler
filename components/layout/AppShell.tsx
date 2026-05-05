@@ -7,6 +7,7 @@ import { queryKeys } from '@/types'
 import { getTerms } from '@/services/setup'
 import Sidebar from './Sidebar'
 import Topbar from './Topbar'
+import BottomNav from './BottonNav'
 import type { Term } from '@/types'
 
 interface AppShellProps {
@@ -18,11 +19,10 @@ export default function AppShell({ children, title }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { activeTerm, setActiveTerm } = useTermStore()
 
-  // Eagerly fetch terms so the topbar badge is populated on every page load
   const { data: terms = [] } = useQuery({
     queryKey: queryKeys.terms,
     queryFn: getTerms,
-    staleTime: 5 * 60 * 1000, // 5 min — shared with modal, no double fetch
+    staleTime: 5 * 60 * 1000,
   })
 
   useEffect(() => {
@@ -34,11 +34,22 @@ export default function AppShell({ children, title }: AppShellProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Sidebar — desktop always visible, mobile overlay via sidebarOpen */}
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {/* Main column */}
       <div className="lg:pl-60">
         <Topbar title={title} onMenuClick={() => setSidebarOpen(true)} />
-        <main className="p-3 sm:p-4 lg:p-6 min-w-0">{children}</main>
+
+        {/* Extra bottom padding on mobile so content clears the bottom nav.
+            On lg+ the bottom nav is hidden so no extra padding needed.      */}
+        <main className="p-3 sm:p-4 lg:p-6 min-w-0 pb-6 lg:pb-6">
+          {children}
+        </main>
       </div>
+
+      {/* Mobile-only bottom navigation */}
+      <BottomNav />
     </div>
   )
 }

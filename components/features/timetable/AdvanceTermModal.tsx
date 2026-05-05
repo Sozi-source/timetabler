@@ -441,14 +441,14 @@ export default function AdvanceTermModal() {
   return (
     <>
       {/* Trigger button */}
-      <button
-        onClick={handleOpen}
-        className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-[#1e3a5f] text-white hover:bg-[#16304f] shadow-sm ring-1 ring-[#1e3a5f]/10 active:scale-[.97]"
-      >
-        <FastForwardIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        <span className="hidden xs:inline">Manage Term</span>
-        <span className="xs:hidden">Term</span>
-      </button>
+    <button
+      onClick={handleOpen}
+      aria-label="Manage term"
+      className="inline-flex items-center gap-2 rounded-xl font-bold transition-all bg-[#1e3a5f] text-white hover:bg-[#16304f] shadow-sm ring-1 ring-[#1e3a5f]/10 active:scale-[.97] p-1.5 sm:px-3 sm:py-1.5 sm:text-xs"
+    >
+      <FastForwardIcon className="w-4 h-4 shrink-0" />
+      <span className="hidden sm:inline">Manage Term</span>
+    </button>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
