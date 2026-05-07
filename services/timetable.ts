@@ -6,6 +6,8 @@ import type {
   TrainerDashboardData,
   MasterTimetableData,
   Period,
+  TermTrainerAssignment,
+  TermTrainerAssignmentPayload,
 } from '@/types'
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
@@ -18,10 +20,6 @@ export const getTrainerDashboard = () =>
 
 // ── Timetable ─────────────────────────────────────────────────────────────────
 
-/**
- * Always fetches DRAFT status — the master timetable page works in draft mode.
- * Normalises period shape so start_time / end_time are always present.
- */
 export const getMasterTimetable = (termId: string): Promise<MasterTimetableData> =>
   api.get(`/timetable/master/?term=${termId}&status=DRAFT`).then(r => {
     const d = r.data.data
@@ -69,7 +67,7 @@ export const getConflicts = (termId: string) =>
 // ── Mutations ─────────────────────────────────────────────────────────────────
 
 export const generateTimetable = (termId: string) =>
-  api.post(`/timetable/generate/`, { term_id: termId }, { timeout: 300_000 }).then(r => r.data) // 5 min
+  api.post(`/timetable/generate/`, { term_id: termId }, { timeout: 300_000 }).then(r => r.data)
 
 export const publishDrafts = (termId: string) =>
   api.post('/timetable/publish/', { term_id: termId }).then(r => r.data)
@@ -88,3 +86,39 @@ export const updateEntry = updateScheduledUnit
 export const deleteEntry = deleteScheduledUnit
 export const publishTimetable = publishDrafts
 export const deleteDrafts = clearDrafts
+
+// ── Term Trainer Assignments ──────────────────────────────────────────────────
+
+export const getTermAssignments = (params?: { term?: string; cohort?: string }) =>
+  api
+    .get('/timetable/term-assignments/', { params })
+    .then(r => r.data.data as TermTrainerAssignment[])
+
+export const getTermAssignmentsByUnit = (params: {
+  term: string
+  curriculum_unit: string
+}) =>
+  api
+    .get('/timetable/term-assignments/by-unit/', { params })
+    .then(r => r.data.data as TermTrainerAssignment[])
+
+export const createTermAssignment = (data: TermTrainerAssignmentPayload) =>
+  api
+    .post('/timetable/term-assignments/', data)
+    .then(r => r.data.data as TermTrainerAssignment)
+
+export const bulkTermAssignments = (assignments: TermTrainerAssignmentPayload[]) =>
+  api
+    .post('/timetable/term-assignments/bulk/', { assignments })
+    .then(r => r.data.data as { created: number; updated: number; skipped: number })
+
+export const updateTermAssignment = (
+  id: string,
+  data: Partial<TermTrainerAssignmentPayload>
+) =>
+  api
+    .patch(`/timetable/term-assignments/${id}/`, data)
+    .then(r => r.data.data as TermTrainerAssignment)
+
+export const deleteTermAssignment = (id: string) =>
+  api.delete(`/timetable/term-assignments/${id}/`).then(r => r.data)

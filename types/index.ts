@@ -178,26 +178,48 @@ export interface Cohort {
   is_enrolled?: boolean;
 }
 
+// ── TermTrainerAssignment ─────────────────────────────────────────────────
+export interface TermTrainerAssignment {
+  id: string;
+  term: string;
+  term_name?: string;
+  cohort: string;
+  cohort_name?: string;
+  curriculum_unit: string;
+  unit_code?: string;
+  unit_name?: string;
+  trainer: string;
+  trainer_name?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TermTrainerAssignmentPayload {
+  term: string;
+  cohort: string;
+  curriculum_unit: string;
+  trainer: string;
+  notes?: string;
+}
+
 // ── ScheduledUnit (Timetable Entry) ───────────────────────────────────────
 export type EntryStatus = 'DRAFT' | 'PUBLISHED' | 'CANCELLED';
 export type DayCode = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
 
 export interface ScheduledUnit {
   id: string;
-  // Raw IDs (for edit modals / API mutations)
   term: string;
   curriculum_unit: string;
   cohort: string | null;
   trainer: string | null;
   room: string | null;
-  // Display names (rendered in cards / grids)
   unit_code: string;
   unit_name: string;
   cohort_name: string;
   trainer_name: string | null;
-  trainer_full: string | null;   // e.g. "Mrs Ayuma"
+  trainer_full: string | null;
   room_code: string | null;
-  // Scheduling
   day: DayCode;
   period: string;
   period_label: string;
@@ -270,7 +292,6 @@ export interface Constraint {
   notes: string;
 }
 
-
 // ── Dashboard ─────────────────────────────────────────────────────────────
 export interface DashboardData {
   institution: string;
@@ -330,24 +351,25 @@ export interface AuthUser {
 
 // ── Query Keys ────────────────────────────────────────────────────────────
 export const queryKeys = {
-  institution:    ['institution']  as const,
-  departments:    ['departments']  as const,
-  programmes:     ['programmes']   as const,
-  curriculum:     (progId: string, term?: number) => ['curriculum', progId, term] as const,
-  periods:        ['periods']      as const,
-  rooms:          ['rooms']        as const,
-  trainers:       ['trainers']     as const,
-  terms:          ['terms']        as const,
-  cohorts:        ['cohorts']      as const,
-  constraints:    ['constraints']  as const,
-  dashboard:      ['dashboard']    as const,
-  trainerDash:    ['dashboard', 'trainer'] as const,
-  masterTT:       (termId: string) => ['timetable', 'master', termId] as const,
-  cohortTT:       (cohortId: string, termId: string) => ['timetable', 'cohort', cohortId, termId] as const,
-  trainerTT:      (trainerId: string, termId: string) => ['timetable', 'trainer', trainerId, termId] as const,
-  conflicts:      (termId: string) => ['conflicts', termId] as const,
-  cohortProgress: (cohortId: string) => ['cohorts', cohortId, 'progress'] as const,
-  availability:   (trainerId: string) => ['trainers', trainerId, 'availability'] as const,
+  institution:      ['institution']  as const,
+  departments:      ['departments']  as const,
+  programmes:       ['programmes']   as const,
+  curriculum:       (progId: string, term?: number) => ['curriculum', progId, term] as const,
+  periods:          ['periods']      as const,
+  rooms:            ['rooms']        as const,
+  trainers:         ['trainers']     as const,
+  terms:            ['terms']        as const,
+  cohorts:          ['cohorts']      as const,
+  constraints:      ['constraints']  as const,
+  dashboard:        ['dashboard']    as const,
+  trainerDash:      ['dashboard', 'trainer'] as const,
+  masterTT:         (termId: string) => ['timetable', 'master', termId] as const,
+  cohortTT:         (cohortId: string, termId: string) => ['timetable', 'cohort', cohortId, termId] as const,
+  trainerTT:        (trainerId: string, termId: string) => ['timetable', 'trainer', trainerId, termId] as const,
+  conflicts:        (termId: string) => ['conflicts', termId] as const,
+  cohortProgress:   (cohortId: string) => ['cohorts', cohortId, 'progress'] as const,
+  availability:     (trainerId: string) => ['trainers', trainerId, 'availability'] as const,
+  termAssignments:  (termId: string, cohortId?: string) => ['term-assignments', termId, cohortId] as const,
 } as const;
 
 // ── Display Helpers ───────────────────────────────────────────────────────

@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Calendar, AlertTriangle,
   Settings2, Building2, LogOut, X,
-  BookOpen, ChevronRight, GraduationCap,
+  BookOpen, ChevronRight, GraduationCap, UserCheck,
 } from 'lucide-react'
 import { useAuthStore } from '@/store'
 import { cn } from '@/lib/utils'
@@ -31,16 +31,16 @@ const NAV = [
   {
     label: 'Setup',
     items: [
-      { href: '/setup/institution',    icon: Building2,      label: 'Institution' },
-      { href: '/setup/departments',    icon: Building2,      label: 'Departments' },
-      { href: '/setup/programmes',     icon: Building2,      label: 'Programmes' },
-      { href: '/setup/curriculum',     icon: Building2,      label: 'Curriculum' },
-      { href: '/setup/periods',        icon: Building2,      label: 'Periods' },
-      { href: '/setup/rooms',          icon: Building2,      label: 'Rooms' },
-      { href: '/setup/trainers',       icon: Building2,      label: 'Trainers' },
-      { href: '/setup/terms',          icon: Building2,      label: 'Terms' },
-      { href: '/setup/cohorts',        icon: Building2,      label: 'Cohorts' },
-      { href: '/setup/units-on-offer', icon: BookOpen,       label: 'Units on Offer' },
+      { href: '/setup/institution',          icon: Building2,   label: 'Institution' },
+      { href: '/setup/departments',          icon: Building2,   label: 'Departments' },
+      { href: '/setup/programmes',           icon: Building2,   label: 'Programmes' },
+      { href: '/setup/curriculum',           icon: Building2,   label: 'Curriculum' },
+      { href: '/setup/periods',              icon: Building2,   label: 'Periods' },
+      { href: '/setup/rooms',                icon: Building2,   label: 'Rooms' },
+      { href: '/setup/trainers',             icon: Building2,   label: 'Trainers' },
+      { href: '/setup/terms',                icon: Building2,   label: 'Terms' },
+      { href: '/setup/cohorts',              icon: Building2,   label: 'Cohorts' },
+      { href: '/setup/units-on-offer',       icon: BookOpen,    label: 'Units on Offer' },
     ],
   },
 ]
@@ -94,7 +94,6 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5 scrollbar-none">
         {NAV.map((section) => (
           <div key={section.label}>
-            {/* Section label */}
             <p className="mb-1.5 px-2.5 text-[9px] font-bold uppercase tracking-[0.15em] text-white/30">
               {section.label}
             </p>
