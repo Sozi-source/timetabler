@@ -99,6 +99,7 @@ async function apiFetch<T>(
   const token = typeof window !== 'undefined'
     ? localStorage.getItem('auth_token') ?? ''
     : ''
+  if (typeof window === 'undefined') return { ok: false, data: null as T, error: 'SSR' }
   const res = await fetch(API(path), {
     headers: { 'Content-Type': 'application/json', Authorization: `Token ${token}` },
     ...options,

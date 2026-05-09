@@ -18,7 +18,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { UserCheck, ChevronDown, Loader2, CheckCircle2, Trash2 } from 'lucide-react'
 import { queryKeys } from '@/types'
 import {
-  getTermAssignmentsByUnit,
+  getTermAssignments,
   createTermAssignment,
   updateTermAssignment,
   deleteTermAssignment,
@@ -45,7 +45,7 @@ export function TrainerAssignmentPanel({
 
   const { data: assignments = [], isLoading } = useQuery<TermTrainerAssignment[]>({
     queryKey: [...key, unitId],
-    queryFn: () => getTermAssignmentsByUnit({ term: termId, curriculum_unit: unitId }),
+    queryFn: () => getTermAssignments({ term: termId, curriculum_unit: unitId }),
     enabled:  !!termId && !!unitId,
   })
 

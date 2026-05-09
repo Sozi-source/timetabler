@@ -1,4 +1,4 @@
-﻿import api from '@/lib/api'
+import api from '@/lib/api'
 import type {
   ScheduledUnit,
   Conflict,
@@ -10,7 +10,7 @@ import type {
   TermTrainerAssignmentPayload,
 } from '@/types'
 
-// ── Dashboard ──────────────────────────────────────────────────────────────────
+// -- Dashboard ------------------------------------------------------------------
 
 export const getDashboard = (): Promise<DashboardData> =>
   api.get('/dashboard/').then((r) => r.data.data)
@@ -18,26 +18,26 @@ export const getDashboard = (): Promise<DashboardData> =>
 export const getTrainerDashboard = (): Promise<TrainerDashboardData> =>
   api.get('/dashboard/trainer/').then((r) => r.data.data)
 
-// ── Master timetable ───────────────────────────────────────────────────────────
+// -- Master timetable -----------------------------------------------------------
 
 export const getMasterTimetable = (termId: string): Promise<MasterTimetableData> =>
   api.get('/timetable/master/', { params: { term: termId } }).then((r) => r.data.data)
 
-// ── Cohort timetable ───────────────────────────────────────────────────────────
+// -- Cohort timetable -----------------------------------------------------------
 // Backend: GET /api/timetable/cohort/<uuid:cohort_id>/?term=<uuid>
 export const getCohortTimetable = (cohortId: string, termId: string) =>
   api
     .get(`/timetable/cohort/${cohortId}/`, { params: { term: termId } })
     .then((r) => r.data.data)
 
-// ── Trainer timetable ──────────────────────────────────────────────────────────
+// -- Trainer timetable ----------------------------------------------------------
 // Backend: GET /api/timetable/trainer/<uuid:trainer_id>/?term=<uuid>
 export const getTrainerTimetable = (trainerId: string, termId: string) =>
   api
     .get(`/timetable/trainer/${trainerId}/`, { params: { term: termId } })
     .then((r) => r.data.data)
 
-// ── Conflicts ──────────────────────────────────────────────────────────────────
+// -- Conflicts ------------------------------------------------------------------
 
 export const getConflicts = (termId: string): Promise<Conflict[]> =>
   api.get('/conflicts/', { params: { term: termId } }).then((r) => {
@@ -45,7 +45,7 @@ export const getConflicts = (termId: string): Promise<Conflict[]> =>
     return Array.isArray(d) ? d : (d?.results ?? [])
   })
 
-// ── Scheduled unit CRUD ────────────────────────────────────────────────────────
+// -- Scheduled unit CRUD --------------------------------------------------------
 // Backend: /api/timetable/entry/<uuid>/ (singular)
 
 export const getScheduledUnits = (termId: string): Promise<ScheduledUnit[]> =>
@@ -60,7 +60,7 @@ export const updateScheduledUnit = (id: string, payload: Partial<ScheduledUnit>)
 export const deleteScheduledUnit = (id: string) =>
   api.delete(`/timetable/entry/${id}/`).then(() => ({ ok: true }))
 
-// ── Generate / Publish ─────────────────────────────────────────────────────────
+// -- Generate / Publish ---------------------------------------------------------
 
 export const generateTimetable = (termId: string) =>
   api.post('/timetable/generate/', { term: termId }).then((r) => r.data)
@@ -68,11 +68,11 @@ export const generateTimetable = (termId: string) =>
 export const publishTimetable = (termId: string) =>
   api.post('/timetable/publish/', { term: termId }).then((r) => r.data)
 
-// ── Term trainer assignments ───────────────────────────────────────────────────
+// -- Term trainer assignments ---------------------------------------------------
 // Backend: /api/term-assignments/ (no timetable/ prefix)
 
-export const getTermAssignments = (termId: string): Promise<TermTrainerAssignment[]> =>
-  api.get('/term-assignments/', { params: { term: termId } }).then((r) => {
+export const getTermAssignments = (params: { term: string; cohort?: string; curriculum_unit?: string }): Promise<TermTrainerAssignment[]> =>
+  api.get('/term-assignments/', { params: { term: params.term, cohort: params.cohort, curriculum_unit: params.curriculum_unit } }).then((r) => {
     const d = r.data.data
     return Array.isArray(d) ? d : (d?.results ?? [])
   })
@@ -88,10 +88,30 @@ export const updateTermAssignment = (
 export const deleteTermAssignment = (id: string) =>
   api.delete(`/term-assignments/${id}/`).then(() => ({ ok: true }))
 
-// ── Periods ────────────────────────────────────────────────────────────────────
+// -- Periods --------------------------------------------------------------------
 
 export const getPeriods = (): Promise<Period[]> =>
   api.get('/periods/').then((r) => {
     const d = r.data.data
     return Array.isArray(d) ? d : (d?.results ?? [])
   })
+// --- Auto-added stubs: implement these properly ---
+export const deleteDrafts = (termId: string): Promise<void> => {
+  throw new Error('deleteDrafts not implemented')
+}
+
+export const updateEntry = (id: string, data: unknown): Promise<unknown> => {
+  throw new Error('updateEntry not implemented')
+}
+
+export const deleteEntry = (id: string): Promise<void> => {
+  throw new Error('deleteEntry not implemented')
+}
+
+export const bulkTermAssignments = (rows: unknown[]): Promise<unknown> => {
+  throw new Error('bulkTermAssignments not implemented')
+}
+
+
+
+
