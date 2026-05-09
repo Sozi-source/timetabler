@@ -19,7 +19,7 @@ import {
   RefreshCw, Trash2, Send, Loader2, Users, BookOpen,
   AlertTriangle, CheckCircle2, ChevronDown, XCircle,
   ShieldCheck, X, ChevronRight, Zap, ExternalLink,
-  ChevronUp, AlertCircle, Info, ArrowRight,
+  ChevronUp, AlertCircle, Info, ArrowRight, RotateCcw,
 } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -78,12 +78,12 @@ const RETRY_DELAY_MS = 1_500
 
 function getIssueConfig(issue: ValidationIssue): { label: string; fixLabel?: string; fixPath?: string } {
   switch (issue.type) {
-    case 'NO_TRAINER':              return { label: 'No trainer assigned',       fixLabel: 'Assign trainer →', fixPath: '/setup/units-on-offer' }
-    case 'TRAINER_OVERLOAD':        return { label: 'Trainer overloaded',        fixLabel: 'View trainers →',  fixPath: '/setup/trainers' }
-    case 'SINGLE_TRAINER_BOTTLENECK': return { label: 'Single-trainer bottleneck', fixLabel: 'View trainers →', fixPath: '/setup/trainers' }
-    case 'NO_SUITABLE_ROOM':        return { label: 'No suitable room',          fixLabel: 'View rooms →',     fixPath: '/setup/rooms' }
-    case 'SLOT_SHORTAGE':           return { label: 'Slot shortage',             fixLabel: 'View constraints →', fixPath: '/constraints' }
-    default:                        return { label: issue.type }
+    case 'NO_TRAINER':                return { label: 'No trainer assigned',       fixLabel: 'Assign trainer \u2192', fixPath: '/setup/units-on-offer' }
+    case 'TRAINER_OVERLOAD':          return { label: 'Trainer overloaded',        fixLabel: 'View trainers \u2192',  fixPath: '/setup/trainers' }
+    case 'SINGLE_TRAINER_BOTTLENECK': return { label: 'Single-trainer bottleneck', fixLabel: 'View trainers \u2192',  fixPath: '/setup/trainers' }
+    case 'NO_SUITABLE_ROOM':          return { label: 'No suitable room',          fixLabel: 'View rooms \u2192',     fixPath: '/setup/rooms' }
+    case 'SLOT_SHORTAGE':             return { label: 'Slot shortage',             fixLabel: 'View constraints \u2192', fixPath: '/constraints' }
+    default:                          return { label: issue.type }
   }
 }
 
@@ -118,7 +118,7 @@ function IssueRow({ issue, variant, onNavigate }: {
                 </span>
               )}
               {issue.cohort && (issue.unit_code || issue.trainer_name) && (
-                <span className={cn('text-xs', isBlocking ? 'text-red-300' : 'text-amber-300')}>·</span>
+                <span className={cn('text-xs', isBlocking ? 'text-red-300' : 'text-amber-300')}>&middot;</span>
               )}
               {issue.trainer_name && (
                 <span className={cn('text-xs font-bold', isBlocking ? 'text-red-800' : 'text-amber-800')}>
@@ -216,7 +216,7 @@ function ValidateModal({ result, onProceed, onCancel }: {
                 {severity === 'ok'      && 'All checks passed'}
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                {result.summary.cohorts_checked} cohorts · {result.summary.units_checked} units checked
+                {result.summary.cohorts_checked} cohorts &middot; {result.summary.units_checked} units checked
               </p>
             </div>
           </div>
@@ -257,7 +257,7 @@ function ValidateModal({ result, onProceed, onCancel }: {
               <div className="flex items-center gap-2 mb-2">
                 <div className="h-px flex-1 bg-red-100" />
                 <span className="text-[10px] font-bold uppercase tracking-widest text-red-400">
-                  Blocking · {result.blocking.length}
+                  Blocking &middot; {result.blocking.length}
                 </span>
                 <div className="h-px flex-1 bg-red-100" />
               </div>
@@ -282,7 +282,7 @@ function ValidateModal({ result, onProceed, onCancel }: {
               >
                 <div className="h-px flex-1 bg-amber-100" />
                 <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-amber-400 group-hover:text-amber-600 transition-colors">
-                  Warnings · {result.warnings.length}
+                  Warnings &middot; {result.warnings.length}
                   {warningsOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                 </span>
                 <div className="h-px flex-1 bg-amber-100" />
@@ -360,6 +360,60 @@ function ValidateModal({ result, onProceed, onCancel }: {
   )
 }
 
+// ─── RevertConfirmModal ───────────────────────────────────────────────────────
+
+function RevertConfirmModal({ onConfirm, onCancel }: {
+  onConfirm: () => void
+  onCancel:  () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden">
+        {/* Header */}
+        <div className="px-5 py-4 flex items-center gap-3 border-b border-amber-100 bg-amber-50">
+          <div className="rounded-xl p-1.5 bg-amber-100">
+            <RotateCcw className="h-4 w-4 text-amber-600" />
+          </div>
+          <div>
+            <h2 className="font-bold text-gray-900 text-sm">Revert to Draft?</h2>
+            <p className="text-xs text-gray-500 mt-0.5">This will unpublish the timetable</p>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="px-5 py-4 space-y-3">
+          <p className="text-sm text-gray-600">
+            Reverting to draft will make the timetable <strong>invisible to students and trainers</strong> until re-published.
+          </p>
+          <div className="rounded-xl bg-blue-50 border border-blue-200 px-3 py-2.5 flex items-start gap-2">
+            <Info className="h-3.5 w-3.5 text-blue-500 mt-0.5 shrink-0" />
+            <p className="text-xs text-blue-700">
+              Existing entries are preserved. You can fix conflicts, regenerate, and re-publish without losing your setup.
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-4 border-t border-gray-100 bg-gray-50/50 flex items-center gap-2">
+          <button
+            onClick={onCancel}
+            className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all"
+          >
+            Keep Published
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 transition-all"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Revert to Draft
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function TimetablePage() {
@@ -372,6 +426,8 @@ export default function TimetablePage() {
   const [selectedCohort,       setSelectedCohort]       = useState<string | null>(null)
   const [showCohortPicker,     setShowCohortPicker]     = useState(false)
   const [publishing,           setPublishing]           = useState(false)
+  const [reverting,            setReverting]            = useState(false)
+  const [showRevertModal,      setShowRevertModal]       = useState(false)
   const [clearing,             setClearing]             = useState(false)
   const [validationResult,     setValidationResult]     = useState<ValidationResult | null>(null)
   const [proceedAfterValidate, setProceedAfterValidate] = useState(false)
@@ -400,6 +456,7 @@ export default function TimetablePage() {
   const days                    = data?.days          ?? ['MON', 'TUE', 'WED', 'THU', 'FRI']
   const status: TimetableStatus = data?.status        ?? 'DRAFT'
   const totalEntries: number    = data?.total_entries ?? 0
+  const isDataReady             = !isLoading && data !== undefined
 
   const allEntries = useMemo<ScheduledUnit[]>(() => {
     const out: ScheduledUnit[] = []
@@ -512,6 +569,7 @@ export default function TimetablePage() {
 
   const isGenerating = gen.stage === 'submitting' || gen.stage === 'waiting'
   const isValidating = gen.stage === 'validating'
+  const isBusy       = isGenerating || isValidating || publishing || reverting || clearing
 
   async function handlePublish(force = false) {
     if (!termId) return
@@ -519,13 +577,28 @@ export default function TimetablePage() {
     try {
       await api.post('/timetable/publish/', { term_id: termId, ...(force ? { force: true } : {}) })
       await invalidateAll()
-      toast.success('Timetable published.')
+      toast.success('Timetable published successfully.')
     } catch (err: unknown) {
       const res = (err as { response?: { status?: number; data?: { error?: string } } })?.response
-      if (res?.status === 400) { await invalidateAll(); toast.success('Timetable is already published.') }
+      if (res?.status === 400)      { await invalidateAll(); toast.success('Timetable is already published.') }
       else if (res?.status === 409) { const ok = window.confirm('High severity conflicts. Force-publish anyway?'); if (ok) await handlePublish(true) }
       else toast.error(res?.data?.error ?? 'Publish failed.')
     } finally { setPublishing(false) }
+  }
+
+  async function handleRevertToDraft() {
+    if (!termId) return
+    setReverting(true)
+    setShowRevertModal(false)
+    try {
+      await api.post('/timetable/revert/', { term_id: termId })
+      await invalidateAll()
+      setGen({ stage: 'idle', attempt: 0, maxAttempts: MAX_ATTEMPTS, message: '' })
+      toast.success('Timetable reverted to draft. You can now regenerate.')
+    } catch (err: unknown) {
+      const res = (err as { response?: { data?: { error?: string } } })?.response
+      toast.error(res?.data?.error ?? 'Could not revert to draft.')
+    } finally { setReverting(false) }
   }
 
   async function handleClearDraft() {
@@ -641,6 +714,14 @@ export default function TimetablePage() {
         />
       )}
 
+      {/* Revert to draft confirmation modal */}
+      {showRevertModal && (
+        <RevertConfirmModal
+          onConfirm={handleRevertToDraft}
+          onCancel={() => setShowRevertModal(false)}
+        />
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
@@ -648,7 +729,7 @@ export default function TimetablePage() {
           <p className="text-sm text-gray-500 mt-0.5">
             {activeTerm?.name ?? ''}
             {totalEntries > 0 && (
-              <span className="ml-2 text-gray-400 tabular-nums">\u00b7 {totalEntries} scheduled units</span>
+              <span className="ml-2 text-gray-400 tabular-nums">&middot; {totalEntries} scheduled units</span>
             )}
           </p>
         </div>
@@ -699,12 +780,12 @@ export default function TimetablePage() {
             </div>
           )}
 
-          {/* Generate + Clear Draft — DRAFT only */}
-          {status === 'DRAFT' && (
+          {/* DRAFT actions: Generate + Clear Draft */}
+          {isDataReady && status === 'DRAFT' && (
             <>
               <button
                 onClick={isGenerating || isValidating ? handleCancelGenerate : handleGenerate}
-                disabled={clearing}
+                disabled={clearing || reverting}
                 className={cn(
                   'flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold text-white transition-all disabled:opacity-50 shadow-sm',
                   isGenerating || isValidating ? 'bg-blue-500 hover:bg-blue-600' : 'bg-[#1e3a5f] hover:bg-[#162d4a]',
@@ -718,29 +799,47 @@ export default function TimetablePage() {
               {totalEntries > 0 && (
                 <button
                   onClick={handleClearDraft}
-                  disabled={clearing || isGenerating || isValidating}
+                  disabled={isBusy}
                   className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50 transition-all"
                 >
-                  {clearing ? <><Loader2 className="h-4 w-4 animate-spin" />Clearing&hellip;</> : <><Trash2 className="h-4 w-4" />Clear Draft</>}
+                  {clearing
+                    ? <><Loader2 className="h-4 w-4 animate-spin" />Clearing&hellip;</>
+                    : <><Trash2 className="h-4 w-4" />Clear Draft</>}
                 </button>
               )}
             </>
           )}
 
+          {/* PUBLISHED actions: Revert to Draft */}
+          {isDataReady && status === 'PUBLISHED' && (
+            <button
+              onClick={() => setShowRevertModal(true)}
+              disabled={isBusy}
+              className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-700 hover:bg-amber-100 disabled:opacity-50 transition-all shadow-sm"
+              title="Revert to draft to make changes and regenerate"
+            >
+              {reverting
+                ? <><Loader2 className="h-4 w-4 animate-spin" />Reverting&hellip;</>
+                : <><RotateCcw className="h-4 w-4" />Revert to Draft</>}
+            </button>
+          )}
+
           {/* Publish — visible for DRAFT and PUBLISHED */}
-          {(status === 'DRAFT' || status === 'PUBLISHED') && (
+          {isDataReady && (status === 'DRAFT' || status === 'PUBLISHED') && (
             <button
               onClick={() => handlePublish()}
-              disabled={publishing || totalEntries === 0 || isGenerating || isValidating}
+              disabled={publishing || (status === 'DRAFT' && totalEntries === 0) || isGenerating || isValidating || reverting}
               className="flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition-all shadow-sm"
             >
-              {publishing ? <><Loader2 className="h-4 w-4 animate-spin" />Publishing&hellip;</> : <><Send className="h-4 w-4" />Publish</>}
+              {publishing
+                ? <><Loader2 className="h-4 w-4 animate-spin" />Publishing&hellip;</>
+                : <><Send className="h-4 w-4" />Publish</>}
             </button>
           )}
 
           <button
             onClick={() => refetch()}
-            disabled={isLoading}
+            disabled={isLoading || isBusy}
             className="rounded-xl border border-gray-200 bg-white p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-all shadow-sm"
             title="Refresh"
           >
@@ -748,6 +847,17 @@ export default function TimetablePage() {
           </button>
         </div>
       </div>
+
+      {/* Revert in-progress banner */}
+      {reverting && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-center gap-3">
+          <Loader2 className="h-4 w-4 animate-spin text-amber-500 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800">Reverting to draft&hellip;</p>
+            <p className="text-xs text-amber-600 mt-0.5">The timetable will be unpublished momentarily.</p>
+          </div>
+        </div>
+      )}
 
       {/* Progress bar */}
       <GenProgressBar />
