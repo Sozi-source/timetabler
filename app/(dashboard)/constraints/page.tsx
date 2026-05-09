@@ -2,32 +2,13 @@
 
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useConstraints, useTrainers, useCohorts, useRooms, usePeriods } from '@/hooks/useSetup'
+import { useConstraints, usePeriods } from '@/hooks/useSetup'
 import { queryKeys, DAY_LABELS } from '@/types'
-import type { Constraint, ConstraintScope, ConstraintRule, Period } from '@/types'
+import type { Constraint, Period } from '@/types'
 import { deleteConstraint } from '@/services/setup'
 import ConstraintModal from '@/components/features/constraints/ConstraintModal'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, Loader2, ShieldCheck, Lock, Unlock } from 'lucide-react'
-import { cn } from '@/lib/utils'
-
-// ── Badges ──────────────────────────────────────────────────────────────────
-const SCOPE_BADGE: Record<ConstraintScope, string> = {
-  UNIT:    'bg-slate-100 text-slate-700 ring-slate-200',
-  TRAINER: 'bg-blue-100 text-blue-700 ring-blue-200',
-  COHORT:  'bg-violet-100 text-violet-700 ring-violet-200',
-  ROOM:    'bg-teal-100 text-teal-700 ring-teal-200',
-}
-
-const RULE_LABEL: Record<ConstraintRule, string> = {
-  PIN_DAY_PERIOD: 'Pin day & period',
-  PIN_DAY:        'Pin day',
-  PREFERRED_ROOM: 'Preferred room',
-  AVOID_DAY:      'Avoid day',
-  AVOID_PERIOD:   'Avoid period',
-  BACK_TO_BACK:   'Back-to-back',
-  MAX_PER_DAY:    'Max per day',
-}
+import { Plus, Pencil, Trash2, Loader2, ShieldCheck } from 'lucide-react'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 function formatTime(t?: string) {
@@ -35,40 +16,34 @@ function formatTime(t?: string) {
   return t.slice(0, 5)
 }
 
-function formatParameters(
+function formatDayTime(
   c: Constraint,
   periodMap: Map<string, Period>,
-  roomMap:   Map<string, string>,
-): string {
+): { day: string; time: string } {
   const p = c.parameters
-  const parts: string[] = []
 
   const day = p.day as string | undefined
-  if (day) parts.push(DAY_LABELS[day] ?? day)
+  const avoidDays = p.avoid_days as string[] | undefined
+
+  const dayLabel =
+    day
+      ? (DAY_LABELS[day] ?? day)
+      : avoidDays?.length
+      ? avoidDays.map(d => DAY_LABELS[d] ?? d).join(', ')
+      : '—'
 
   const periodId = p.period_id as string | undefined
+  let timeLabel = ''
   if (periodId) {
     const period = periodMap.get(periodId)
     if (period) {
       const start = formatTime(period.start_time || period.start)
       const end   = formatTime(period.end_time   || period.end)
-      parts.push(`${period.label} (${start}–${end})`)
+      timeLabel = period.label ? `${period.label} · ${start}–${end}` : `${start}–${end}`
     }
   }
 
-  const avoidDays = p.avoid_days as string[] | undefined
-  if (avoidDays?.length) parts.push(avoidDays.map(d => DAY_LABELS[d] ?? d).join(', '))
-
-  const roomId = p.room_id as string | undefined
-  if (roomId) parts.push(roomMap.get(roomId) ?? roomId)
-
-  const preferredRoom = p.preferred_room as string | undefined
-  if (preferredRoom) parts.push(roomMap.get(preferredRoom) ?? preferredRoom)
-
-  const max = p.max as number | undefined
-  if (max !== undefined) parts.push(`Max ${max}/day`)
-
-  return parts.length ? parts.join(' · ') : '—'
+  return { day: dayLabel, time: timeLabel }
 }
 
 // ── Page ────────────────────────────────────────────────────────────────────
@@ -76,9 +51,6 @@ export default function ConstraintsPage() {
   const qc = useQueryClient()
 
   const { data: constraintsRaw = [], isLoading } = useConstraints()
-  const { data: trainers = [] } = useTrainers()
-  const { data: cohorts  = [] } = useCohorts()
-  const { data: rooms    = [] } = useRooms()
   const { data: periodsRaw } = usePeriods()
   const periods: Period[] = Array.isArray(periodsRaw) ? periodsRaw : []
 
@@ -86,16 +58,6 @@ export default function ConstraintsPage() {
     ? constraintsRaw
     : ((constraintsRaw as { data?: Constraint[] })?.data ?? [])
 
-  const trainerMap = new Map<string, string>(
-    (trainers as { id: string; first_name: string; last_name: string }[])
-      .map(t => [t.id, `${t.first_name} ${t.last_name}`.trim()])
-  )
-  const cohortMap = new Map<string, string>(
-    (cohorts as { id: string; name: string }[]).map(c => [c.id, c.name])
-  )
-  const roomMap = new Map<string, string>(
-    (rooms as { id: string; name: string }[]).map(r => [r.id, r.name])
-  )
   const periodMap = new Map<string, Period>(
     periods.map(p => [String(p.id), p])
   )
@@ -129,167 +91,190 @@ export default function ConstraintsPage() {
   function openCreate() { setEditing(null); setModalOpen(true) }
   function openEdit(c: Constraint) { setEditing(c); setModalOpen(true) }
 
-  function resolveTarget(c: Constraint): { name: string; sub: string | null } {
-    if (c.curriculum_unit) return { name: c.unit_name ?? '—', sub: c.unit_code ?? null }
-    if (c.trainer) return { name: trainerMap.get(c.trainer) ?? '—', sub: null }
-    if (c.cohort)  return { name: cohortMap.get(c.cohort)   ?? '—', sub: null }
-    if (c.room)    return { name: roomMap.get(c.room)       ?? '—', sub: null }
-    return { name: '—', sub: null }
+  function resolveUnitName(c: Constraint): { name: string; code: string | null } {
+    if (c.curriculum_unit) return { name: c.unit_name ?? '—', code: c.unit_code ?? null }
+    return { name: '—', code: null }
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
 
       {/* ── Header ──────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Constraints</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {constraints.length} constraint{constraints.length !== 1 ? 's' : ''} defined
+          <h1 className="text-xl font-semibold tracking-tight text-gray-900">Constraints</h1>
+          <p className="text-sm text-gray-400 mt-0.5">
+            {constraints.length} constraint{constraints.length !== 1 ? 's' : ''} configured
           </p>
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#162d4a] active:scale-[.98] transition-all w-full sm:w-auto justify-center"
+          className="inline-flex items-center gap-2 rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#162d4a] active:scale-[.98] transition-all w-full sm:w-auto justify-center"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-3.5 w-3.5" />
           Add constraint
         </button>
       </div>
 
       {/* ── Loading ─────────────────────────────────────────── */}
       {isLoading && (
-        <div className="animate-pulse space-y-2.5">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-16 rounded-2xl bg-gray-100" />
+        <div className="animate-pulse space-y-px rounded-xl overflow-hidden border border-gray-200">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-14 bg-gray-50" />
           ))}
         </div>
       )}
 
       {/* ── Empty ───────────────────────────────────────────── */}
       {!isLoading && constraints.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 py-16 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 mb-4">
-            <ShieldCheck className="h-7 w-7 text-gray-300" />
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-white px-6 py-16 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 mb-4">
+            <ShieldCheck className="h-5 w-5 text-gray-300" />
           </div>
-          <p className="text-sm font-semibold text-gray-700">No constraints defined yet</p>
-          <p className="text-xs text-gray-400 mt-1">Add a constraint to restrict timetable generation</p>
+          <p className="text-sm font-medium text-gray-700">No constraints yet</p>
+          <p className="text-xs text-gray-400 mt-1">Add a constraint to restrict timetable generation.</p>
           <button
             onClick={openCreate}
-            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors"
+            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-medium text-white hover:bg-[#162d4a] transition-colors"
           >
-            <Plus className="h-4 w-4" /> Add first constraint
+            <Plus className="h-3.5 w-3.5" /> Add constraint
           </button>
         </div>
       )}
 
-      {/* ── Table ───────────────────────────────────────────── */}
+      {/* ── Table (md+) / Cards (mobile) ────────────────────── */}
       {!isLoading && constraints.length > 0 && (
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden overflow-x-auto min-w-0">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/80">
-                <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Scope</th>
-                <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Target</th>
-                <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Rule</th>
-                <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Day / Time</th>
-                <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Strength</th>
-                <th className="px-5 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">Active</th>
-                <th className="px-5 py-3.5" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {constraints.map(c => {
-                const target = resolveTarget(c)
-                const params = formatParameters(c, periodMap, roomMap)
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400 w-1/2">
+                    Unit
+                  </th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400 w-1/4">
+                    Day
+                  </th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400 w-1/4">
+                    Time
+                  </th>
+                  <th className="px-5 py-3 w-20" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {constraints.map(c => {
+                  const unit = resolveUnitName(c)
+                  const { day, time } = formatDayTime(c, periodMap)
 
-                return (
-                  <tr key={c.id} className="hover:bg-gray-50/70 transition-colors group">
+                  return (
+                    <tr key={c.id} className="group hover:bg-gray-50/60 transition-colors">
+                      <td className="px-5 py-3.5">
+                        <p className="font-medium text-gray-800 leading-tight">{unit.name}</p>
+                        {unit.code && (
+                          <p className="text-[11px] font-mono text-gray-400 mt-0.5">{unit.code}</p>
+                        )}
+                      </td>
+                      <td className="px-5 py-3.5 text-gray-600">
+                        {day !== '—'
+                          ? <span className="font-medium text-gray-700">{day}</span>
+                          : <span className="text-gray-300">—</span>
+                        }
+                      </td>
+                      <td className="px-5 py-3.5 text-gray-500 text-[13px] tabular-nums">
+                        {time ? time : <span className="text-gray-300">—</span>}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => openEdit(c)}
+                            className="rounded-md p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                            title="Edit"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(c)}
+                            disabled={deletingId === c.id}
+                            className="rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 disabled:opacity-40 transition-colors"
+                            title="Delete"
+                          >
+                            {deletingId === c.id
+                              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              : <Trash2 className="h-3.5 w-3.5" />}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
 
-                    {/* Scope */}
-                    <td className="px-5 py-3.5">
-                      <span className={cn(
-                        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1',
-                        SCOPE_BADGE[c.scope]
-                      )}>
-                        {c.scope.charAt(0) + c.scope.slice(1).toLowerCase()}
-                      </span>
-                    </td>
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-2">
+            {constraints.map(c => {
+              const unit = resolveUnitName(c)
+              const { day, time } = formatDayTime(c, periodMap)
 
-                    {/* Target */}
-                    <td className="px-5 py-3.5 max-w-[180px]">
-                      <p className="font-semibold text-gray-800 leading-tight truncate text-sm">{target.name}</p>
-                      {target.sub && (
-                        <p className="text-xs text-gray-400 mt-0.5 font-mono">{target.sub}</p>
-                      )}
-                      {c.notes && (
-                        <p className="text-xs text-gray-400 mt-0.5 italic truncate">{c.notes}</p>
-                      )}
-                    </td>
-
-                    {/* Rule */}
-                    <td className="px-5 py-3.5 whitespace-nowrap">
-                      <code className="text-xs text-gray-600 bg-gray-100 rounded-lg px-2 py-1 font-mono">
-                        {RULE_LABEL[c.rule] ?? c.rule}
-                      </code>
-                    </td>
-
-                    {/* Day / Time */}
-                    <td className="px-5 py-3.5 text-sm text-gray-600 whitespace-nowrap hidden md:table-cell">
-                      {params !== '—' ? params : <span className="text-gray-300">—</span>}
-                    </td>
-
-                    {/* Hard / Soft */}
-                    <td className="px-5 py-3.5">
-                      {c.is_hard ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 ring-1 ring-red-200">
-                          <Lock className="h-3 w-3" />Hard
+              return (
+                <div
+                  key={c.id}
+                  className="rounded-xl border border-gray-200 bg-white px-4 py-3.5 shadow-sm flex items-start justify-between gap-3"
+                >
+                  {/* Left: info */}
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <p className="font-medium text-gray-800 text-sm leading-tight truncate">
+                      {unit.name}
+                    </p>
+                    {unit.code && (
+                      <p className="text-[11px] font-mono text-gray-400">{unit.code}</p>
+                    )}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 pt-0.5">
+                      {day !== '—' && (
+                        <span className="text-xs text-gray-500">
+                          <span className="text-gray-400 mr-1">Day</span>
+                          <span className="font-medium text-gray-700">{day}</span>
                         </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
-                          <Unlock className="h-3 w-3" />Soft
+                      )}
+                      {time && (
+                        <span className="text-xs text-gray-500 tabular-nums">
+                          <span className="text-gray-400 mr-1">Time</span>
+                          <span className="font-medium text-gray-700">{time}</span>
                         </span>
                       )}
-                    </td>
+                      {day === '—' && !time && (
+                        <span className="text-xs text-gray-300">No schedule set</span>
+                      )}
+                    </div>
+                  </div>
 
-                    {/* Active */}
-                    <td className="px-5 py-3.5 text-center">
-                      <span className={cn(
-                        'inline-block h-2.5 w-2.5 rounded-full ring-2',
-                        c.is_active
-                          ? 'bg-emerald-500 ring-emerald-100'
-                          : 'bg-gray-300 ring-gray-100'
-                      )} />
-                    </td>
-
-                    {/* Actions */}
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => openEdit(c)}
-                          className="rounded-lg p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                          title="Edit"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(c)}
-                          disabled={deletingId === c.id}
-                          className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors"
-                          title="Delete"
-                        >
-                          {deletingId === c.id
-                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            : <Trash2 className="h-3.5 w-3.5" />}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                  {/* Right: actions — always visible on mobile */}
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <button
+                      onClick={() => openEdit(c)}
+                      className="rounded-md p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                      title="Edit"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(c)}
+                      disabled={deletingId === c.id}
+                      className="rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 disabled:opacity-40 transition-colors"
+                      title="Delete"
+                    >
+                      {deletingId === c.id
+                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        : <Trash2 className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </>
       )}
 
       <ConstraintModal
