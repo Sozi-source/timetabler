@@ -146,7 +146,7 @@ function MessageBubble({
                 onClick={() => onAction(action)}
                 disabled={applying}
                 className={cn(
-                  'flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium text-left transition-all disabled:opacity-50',
+                  'flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-medium text-left transition-all disabled:opacity-50 min-h-[44px]',
                   action.action === 'REGENERATE'
                     ? 'border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100'
                     : action.action === 'MARK_RESOLVED'
@@ -179,32 +179,27 @@ export default function TimetableAI() {
   const qc = useQueryClient()
   const termId = activeTerm?.id ?? ''
 
-  const [open, setOpen] = useState(false)
+  const [open, setOpen]       = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState('')
+  const [input, setInput]     = useState('')
   const [loading, setLoading] = useState(false)
   const [applying, setApplying] = useState(false)
-  const [aiCtx, setAiCtx] = useState<AIContext | null>(null)
+  const [aiCtx, setAiCtx]    = useState<AIContext | null>(null)
 
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLTextAreaElement>(null)
-  const historyRef = useRef<{ role: string; content: string }[]>([])
-  const greetedRef = useRef(false)
+  const bottomRef   = useRef<HTMLDivElement>(null)
+  const inputRef    = useRef<HTMLTextAreaElement>(null)
+  const historyRef  = useRef<{ role: string; content: string }[]>([])
+  const greetedRef  = useRef(false)
 
-  // ── Use React Query for conflict count — no manual polling ──────────────
   const { data: conflicts } = useConflicts(termId)
   const conflictCount = (conflicts ?? []).filter(
     (c: { resolution_status?: string }) => c.resolution_status === 'PENDING'
   ).length
 
-  // ── Invalidate conflicts after actions ──────────────────────────────────
   const refreshConflictCount = useCallback(() => {
     qc.invalidateQueries({ queryKey: queryKeys.conflicts(termId) })
   }, [qc, termId])
 
-  // ------------------------------------------------------------------
-  // Open/close
-  // ------------------------------------------------------------------
   useEffect(() => {
     if (open) {
       setTimeout(() => inputRef.current?.focus(), 100)
@@ -225,9 +220,16 @@ export default function TimetableAI() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
 
-  // ------------------------------------------------------------------
-  // Core AI call
-  // ------------------------------------------------------------------
+  // Prevent body scroll when panel is open on mobile
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [open])
+
   async function callAI(history: { role: string; content: string }[]) {
     if (!termId) throw new Error('No active term selected.')
     const res = await api.post('/ai/chat/', { messages: history, term_id: termId })
@@ -238,14 +240,10 @@ export default function TimetableAI() {
     return { text, actions, ctx }
   }
 
-  // ------------------------------------------------------------------
-  // Greeting
-  // ------------------------------------------------------------------
   async function sendGreeting() {
     setLoading(true)
     try {
-      const prompt =
-        'Hello! Give me a quick summary of the current timetable state and any conflicts I should know about.'
+      const prompt = 'Hello! Give me a quick summary of the current timetable state and any conflicts I should know about.'
       historyRef.current = [{ role: 'user', content: prompt }]
       const { text, actions, ctx } = await callAI(historyRef.current)
       if (ctx) setAiCtx(ctx)
@@ -262,9 +260,6 @@ export default function TimetableAI() {
     }
   }
 
-  // ------------------------------------------------------------------
-  // Send user message
-  // ------------------------------------------------------------------
   async function sendMessage(userText?: string) {
     const text = (userText ?? input).trim()
     if (!text || loading) return
@@ -294,9 +289,6 @@ export default function TimetableAI() {
     }
   }
 
-  // ------------------------------------------------------------------
-  // Action buttons
-  // ------------------------------------------------------------------
   async function handleAction(action: ActionButton) {
     setApplying(true)
     const result = await executeAction(action, termId, qc)
@@ -319,13 +311,10 @@ export default function TimetableAI() {
 
   if (!termId) return null
 
-  // ------------------------------------------------------------------
-  // Render
-  // ------------------------------------------------------------------
   return (
     <>
       {/* FAB */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
+      <div className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end gap-2">
         {!open && conflictCount > 0 && (
           <div className="flex items-center gap-2 rounded-full bg-red-600 px-3 py-1.5 text-xs font-semibold text-white shadow-lg animate-pulse">
             <AlertTriangle className="h-3 w-3" />
@@ -334,6 +323,7 @@ export default function TimetableAI() {
         )}
         <button
           onClick={() => setOpen(o => !o)}
+          aria-label={open ? 'Close AI assistant' : 'Open AI assistant'}
           className={cn(
             'relative h-14 w-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300',
             open
@@ -356,18 +346,35 @@ export default function TimetableAI() {
         </button>
       </div>
 
+      {/* Backdrop — mobile only */}
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-black/30 sm:hidden"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-24 right-2 sm:right-6 z-50 w-[calc(100vw-1rem)] sm:w-[380px] max-h-[560px] flex flex-col rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden">
+        <div className={cn(
+          'fixed z-50 flex flex-col bg-white shadow-2xl border border-gray-200 overflow-hidden',
+          // Mobile: full-screen sheet from bottom, leaving room for FAB
+          'inset-x-0 bottom-0 rounded-t-2xl max-h-[85dvh]',
+          // Desktop: floating panel above FAB
+          'sm:inset-x-auto sm:bottom-24 sm:right-6 sm:w-[380px] sm:max-h-[560px] sm:rounded-2xl',
+        )}>
 
           {/* Header */}
           <div className="flex items-center gap-3 bg-[#1e3a5f] px-4 py-3.5 shrink-0">
-            <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center">
+            {/* Drag handle — mobile only */}
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 h-1 w-10 rounded-full bg-white/20 sm:hidden" />
+
+            <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
               <Sparkles className="h-4 w-4 text-amber-300" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-white">Timetable AI</p>
-              <p className="text-xs text-white/60">
+              <p className="text-xs text-white/60 truncate">
                 {aiCtx
                   ? conflictCount === 0
                     ? `✓ ${aiCtx.term_name} — ready to publish`
@@ -384,14 +391,14 @@ export default function TimetableAI() {
                   sendGreeting()
                 }}
                 disabled={loading}
-                className="rounded-lg p-1.5 text-white/60 hover:bg-white/10 transition-colors disabled:opacity-40"
+                className="rounded-lg p-2 text-white/60 hover:bg-white/10 transition-colors disabled:opacity-40 min-h-[36px] min-w-[36px] flex items-center justify-center"
                 title="Refresh conversation"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
               </button>
               <button
                 onClick={() => setOpen(false)}
-                className="rounded-lg p-1.5 text-white/60 hover:bg-white/10 transition-colors"
+                className="rounded-lg p-2 text-white/60 hover:bg-white/10 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -429,7 +436,7 @@ export default function TimetableAI() {
 
             {applying && (
               <div className="flex items-center gap-2 text-xs text-gray-500 px-2 mb-2">
-                <Loader2 className="h-3 w-3 animate-spin" />Applying…
+                <Loader2 className="h-3 w-3 animate-spin" /> Applying…
               </div>
             )}
 
@@ -443,7 +450,7 @@ export default function TimetableAI() {
                 <button
                   key={q}
                   onClick={() => sendMessage(q)}
-                  className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-100 transition-all"
+                  className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100 transition-all min-h-[32px]"
                 >
                   {q}
                 </button>
@@ -452,7 +459,7 @@ export default function TimetableAI() {
           )}
 
           {/* Input */}
-          <div className="border-t border-gray-100 px-3 py-3 shrink-0">
+          <div className="border-t border-gray-100 px-3 py-3 shrink-0 pb-[env(safe-area-inset-bottom,12px)]">
             <div className="flex items-end gap-2">
               <textarea
                 ref={inputRef}
@@ -461,13 +468,14 @@ export default function TimetableAI() {
                 onKeyDown={handleKey}
                 placeholder="Ask about conflicts, fixes, or your schedule…"
                 rows={1}
-                className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] focus:border-transparent max-h-24 overflow-y-auto"
-                style={{ minHeight: '38px' }}
+                className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] focus:border-transparent max-h-28 overflow-y-auto"
+                style={{ minHeight: '44px' }}
               />
               <button
                 onClick={() => sendMessage()}
                 disabled={!input.trim() || loading}
-                className="shrink-0 h-9 w-9 rounded-xl bg-[#1e3a5f] flex items-center justify-center text-white disabled:opacity-40 hover:bg-[#162d4a] transition-all"
+                aria-label="Send message"
+                className="shrink-0 h-11 w-11 rounded-xl bg-[#1e3a5f] flex items-center justify-center text-white disabled:opacity-40 hover:bg-[#162d4a] transition-all"
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </button>

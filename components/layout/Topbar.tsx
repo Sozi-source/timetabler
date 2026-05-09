@@ -11,6 +11,10 @@ import { cn } from '@/lib/utils'
 import api from '@/lib/api'
 import type { Term } from '@/types'
 
+const BRAND      = '#0d9488'
+const BRAND_DARK = '#0f766e'
+const BRAND_BG   = '#f0fdfa'
+
 interface TopbarProps {
   title?: string
   onMenuClick: () => void
@@ -52,7 +56,6 @@ function TermSwitcher() {
   const year = (activeTerm as any).college_year ?? new Date(activeTerm.start_date).getFullYear()
   const sem  = (activeTerm as any).college_semester
 
-  // On mobile: show just year + badge. On sm+: add semester label.
   return (
     <div className="relative">
       {/* Trigger */}
@@ -62,21 +65,19 @@ function TermSwitcher() {
         className={cn(
           'flex items-center gap-1 sm:gap-1.5 rounded-xl border px-2 sm:px-2.5 py-1.5 transition-all duration-150',
           open
-            ? 'border-[#1e3a5f]/40 bg-[#1e3a5f]/6 text-[#1e3a5f] shadow-sm'
+            ? 'border-teal-300 bg-teal-50 text-teal-700 shadow-sm'
             : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:shadow-sm'
         )}
       >
         <Calendar className={cn(
           'h-3.5 w-3.5 shrink-0 transition-colors',
-          open ? 'text-[#1e3a5f]' : 'text-gray-400'
+          open ? 'text-teal-600' : 'text-gray-400'
         )} />
 
-        {/* Year — always visible */}
         <span className="text-[13px] font-bold text-gray-900 tabular-nums leading-none">
           {year}
         </span>
 
-        {/* Semester label — hidden on mobile, shown sm+ */}
         {sem ? (
           <span className="hidden sm:inline text-[13px] font-medium text-gray-500 leading-none">
             · Sem {sem}
@@ -87,16 +88,14 @@ function TermSwitcher() {
           </span>
         )}
 
-        {/* NOW badge — always visible */}
         {activeTerm.is_current && (
           <span className="rounded-full bg-emerald-100 text-emerald-700 text-[9px] font-bold px-1.5 py-0.5 shrink-0 leading-none">
             NOW
           </span>
         )}
 
-        {/* Week badge — only on sm+ so mobile doesn't overflow */}
         {activeTerm.week_number != null && (
-          <span className="hidden sm:inline-flex rounded-full bg-amber-50 border border-amber-200 text-amber-600 text-[9px] font-semibold px-1.5 py-0.5 shrink-0 leading-none tabular-nums">
+          <span className="hidden sm:inline-flex rounded-full bg-teal-50 border border-teal-200 text-teal-600 text-[9px] font-semibold px-1.5 py-0.5 shrink-0 leading-none tabular-nums">
             Wk {activeTerm.week_number}
           </span>
         )}
@@ -113,10 +112,8 @@ function TermSwitcher() {
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div
             className="absolute right-0 top-full mt-1.5 z-20 rounded-2xl border border-gray-200 bg-white shadow-xl overflow-hidden"
-            // On mobile: fill most of the screen width; on sm+: fixed width
             style={{ width: 'min(15rem, calc(100vw - 2rem))' }}
           >
-            {/* Header */}
             <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50/80">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                 Switch term
@@ -125,9 +122,7 @@ function TermSwitcher() {
 
             <div className="py-1.5 max-h-64 overflow-y-auto">
               {sorted.length === 0 && (
-                <p className="px-4 py-4 text-gray-400 text-center text-xs">
-                  No terms found
-                </p>
+                <p className="px-4 py-4 text-gray-400 text-center text-xs">No terms found</p>
               )}
               {sorted.map(t => {
                 const isActive = t.id === activeTerm?.id
@@ -139,16 +134,14 @@ function TermSwitcher() {
                     onClick={() => { switchMutation.mutate(t); setOpen(false) }}
                     className={cn(
                       'w-full text-left px-3.5 py-2.5 flex items-center justify-between gap-2 transition-colors',
-                      isActive
-                        ? 'bg-[#1e3a5f] text-white'
-                        : 'hover:bg-gray-50 text-gray-700'
+                      isActive ? 'text-white' : 'hover:bg-gray-50 text-gray-700'
                     )}
+                    style={isActive ? { background: BRAND } : {}}
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       {isActive
-                        ? <Check className="h-3.5 w-3.5 text-amber-300 shrink-0" />
-                        : <span className="h-3.5 w-3.5 shrink-0" />
-                      }
+                        ? <Check className="h-3.5 w-3.5 text-teal-200 shrink-0" />
+                        : <span className="h-3.5 w-3.5 shrink-0" />}
                       <span className="text-[13px] font-semibold truncate">
                         {ts ? `Semester ${ts}` : t.name}
                       </span>
@@ -166,9 +159,7 @@ function TermSwitcher() {
                       {t.is_current && (
                         <span className={cn(
                           'rounded-full text-[9px] font-bold px-1.5 py-0.5 leading-none',
-                          isActive
-                            ? 'bg-white/20 text-white'
-                            : 'bg-emerald-100 text-emerald-700'
+                          isActive ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700'
                         )}>
                           NOW
                         </span>
@@ -188,11 +179,10 @@ function TermSwitcher() {
 // ── Topbar ────────────────────────────────────────────────────────────────────
 export default function Topbar({ title, onMenuClick }: TopbarProps) {
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-gray-200/80 bg-white/95 backdrop-blur-sm px-3 sm:px-4 lg:px-6 gap-2 shadow-sm">
+    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-gray-100 bg-white/95 backdrop-blur-sm px-3 sm:px-4 lg:px-6 gap-2 shadow-sm">
 
-      {/* Left — hamburger + title */}
+      {/* Left */}
       <div className="flex items-center gap-2 min-w-0 flex-1">
-        {/* Hamburger — mobile + tablet only */}
         <button
           onClick={onMenuClick}
           className="lg:hidden rounded-xl p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors active:scale-[.95] shrink-0"
@@ -201,20 +191,20 @@ export default function Topbar({ title, onMenuClick }: TopbarProps) {
           <Menu className="h-5 w-5" />
         </button>
 
-        {/* Desktop brand mark */}
-        <div className="hidden lg:flex h-7 w-7 items-center justify-center rounded-lg bg-[#1e3a5f]/8 shrink-0">
-          <Calendar className="h-3.5 w-3.5 text-[#1e3a5f]" />
+        {/* Desktop brand mark — teal */}
+        <div
+          className="hidden lg:flex h-7 w-7 items-center justify-center rounded-lg shrink-0"
+          style={{ background: BRAND_BG }}
+        >
+          <Calendar className="h-3.5 w-3.5" style={{ color: BRAND }} />
         </div>
 
-        {/* Page title
-            - Mobile: smaller, truncated tightly so right side never wraps
-            - sm+: slightly larger, more room to breathe                    */}
         <h1 className="page-title text-[11px] sm:text-[13px] lg:text-[15px] font-bold text-gray-900 truncate leading-none">
           {title ?? 'Timetabler'}
         </h1>
       </div>
 
-      {/* Right — term switcher + advance modal */}
+      {/* Right */}
       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         <TermSwitcher />
         <span className="h-5 w-px bg-gray-200 shrink-0" />

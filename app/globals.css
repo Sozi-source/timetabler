@@ -1,47 +1,62 @@
 @import "tailwindcss";
 
 /* ── Google Fonts ───────────────────────────────────────────────────────────
-   Syne          → headings / display  (geometric, wide, high-impact)
-   IBM Plex Sans → body / UI           (crisp, utilitarian, trustworthy)
-   IBM Plex Mono → codes / times / IDs (precise, data-forward)
+   Syne             → headings / display  (geometric, wide, high-impact)
+   IBM Plex Sans    → body / UI           (crisp, utilitarian, trustworthy)
+   IBM Plex Mono    → codes / times / IDs (precise, data-forward)
+   Plus Jakarta Sans→ dashboard hero UI   (friendly, banking-grade warmth)
    ────────────────────────────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 /* ── Design tokens ──────────────────────────────────────────────────────── */
 :root {
   --background: #ffffff;
-  --foreground: #0f172a;   /* slate-900 — cooler, more fintech than pure black */
+  --foreground: #0f172a;
 
-  /* Brand */
-  --brand:       #1e3a5f;
-  --brand-dark:  #162d4a;
-  --brand-light: #e8eef5;
+  /* ── Brand — Teal ────────────────────────────────────────────────────── */
+  --brand:        #0d9488;   /* teal-600  */
+  --brand-dark:   #0f766e;   /* teal-700  */
+  --brand-darker: #115e59;   /* teal-800  */
+  --brand-light:  #f0fdfa;   /* teal-50   */
+  --brand-mid:    #99f6e4;   /* teal-200  */
+  --brand-muted:  #ccfbf1;   /* teal-100  */
 
-  /* Accent */
+  /* ── Accent — Amber ──────────────────────────────────────────────────── */
   --accent:       #f59e0b;
   --accent-light: #fef3c7;
 
-  /* Fonts */
-  --font-display: 'Syne', ui-sans-serif, system-ui, sans-serif;
-  --font-sans:    'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-mono:    'IBM Plex Mono', ui-monospace, 'Cascadia Code', monospace;
+  /* ── Neutral surface ─────────────────────────────────────────────────── */
+  --surface:      #ffffff;
+  --surface-2:    #f8fafc;
+  --border:       #e2e8f0;
+  --border-light: #f1f5f9;
 
-  /* Shape */
+  /* ── Fonts ───────────────────────────────────────────────────────────── */
+  --font-display:  'Syne', ui-sans-serif, system-ui, sans-serif;
+  --font-sans:     'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono:     'IBM Plex Mono', ui-monospace, 'Cascadia Code', monospace;
+  --font-jakarta:  'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+
+  /* ── Shape / shadow ──────────────────────────────────────────────────── */
   --radius-card: 0.75rem;
-  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --radius-xl:   1rem;
+  --radius-2xl:  1.25rem;
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07);
+  --shadow-md:   0 4px 12px rgb(0 0 0 / 0.09);
+  --shadow-lg:   0 8px 24px rgb(0 0 0 / 0.12);
 }
 
 /* ── Tailwind v4 theme registration ─────────────────────────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-
-  /* font-sans  → IBM Plex Sans  (utility class: font-sans)  */
-  /* font-mono  → IBM Plex Mono  (utility class: font-mono)  */
-  /* font-display → Syne         (utility class: font-display) */
-  --font-sans:    var(--font-sans);
-  --font-mono:    var(--font-mono);
-  --font-display: var(--font-display);
+  --color-background:  var(--background);
+  --color-foreground:  var(--foreground);
+  --color-brand:       var(--brand);
+  --color-brand-dark:  var(--brand-dark);
+  --color-brand-light: var(--brand-light);
+  --font-sans:         var(--font-sans);
+  --font-mono:         var(--font-mono);
+  --font-display:      var(--font-display);
+  --font-jakarta:      var(--font-jakarta);
 }
 
 /* ── Dark mode ──────────────────────────────────────────────────────────── */
@@ -58,8 +73,6 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  /* IBM Plex Sans optical features */
-  font-feature-settings: 'ss01', 'ss02', 'cv10';
 }
 
 body {
@@ -71,54 +84,53 @@ body {
   font-weight: 400;
 }
 
-/* ── Headings → Syne ─────────────────────────────────────────────────────── 
-   Syne is wide and architectural — tighten tracking significantly so it
-   reads as confident rather than spacey. Weight 700 minimum.
-   ────────────────────────────────────────────────────────────────────────── */
+/* ── Headings → Syne ─────────────────────────────────────────────────────── */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   font-weight: 700;
-  letter-spacing: -0.03em;   /* Syne needs aggressive tightening */
+  letter-spacing: -0.03em;
   line-height: 1.15;
   color: var(--foreground);
 }
 
-h1 { font-size: 2rem;    font-weight: 800; letter-spacing: -0.04em; }
-h2 { font-size: 1.5rem;  font-weight: 700; letter-spacing: -0.03em; }
-h3 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.025em; }
+h1 { font-size: 2rem;     font-weight: 800; letter-spacing: -0.04em; }
+h2 { font-size: 1.5rem;   font-weight: 700; letter-spacing: -0.03em; }
+h3 { font-size: 1.25rem;  font-weight: 700; letter-spacing: -0.025em; }
 h4 { font-size: 1.125rem; font-weight: 600; }
-h5 { font-size: 1rem;    font-weight: 600; }
+h5 { font-size: 1rem;     font-weight: 600; }
 h6 { font-size: 0.875rem; font-weight: 600; }
 
-/* ── Labels / section headings in UI use Syne too ───────────────────────── 
-   Apply .heading class for Syne on any non-h element
-   ────────────────────────────────────────────────────────────────────────── */
 .heading {
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: -0.025em;
 }
 
-/* ── Monospaced → IBM Plex Mono ──────────────────────────────────────────── */
+/* ── Monospaced ──────────────────────────────────────────────────────────── */
 code, kbd, samp, pre, .font-mono {
   font-family: var(--font-mono);
   font-size: 0.875em;
-  letter-spacing: 0;               /* reset — mono needs neutral tracking */
+  letter-spacing: 0;
 }
 
-/* ── Inputs / buttons inherit IBM Plex Sans ──────────────────────────────── */
+/* ── Inputs / buttons ────────────────────────────────────────────────────── */
 input, select, textarea, button {
   font-family: var(--font-sans);
 }
 
-/* ── Sidebar section labels — Syne micro-caps look sharp ────────────────── */
+/* ── Dashboard pages use Plus Jakarta Sans ───────────────────────────────── */
+.dashboard-page {
+  font-family: var(--font-jakarta);
+}
+
+/* ── Sidebar nav labels ──────────────────────────────────────────────────── */
 .nav-label {
   font-family: var(--font-display);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  opacity: 0.45;
+  color: #94a3b8;
 }
 
 /* ── Page titles in topbar ───────────────────────────────────────────────── */
@@ -126,6 +138,59 @@ input, select, textarea, button {
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: -0.025em;
+}
+
+/* ── Breadcrumbs ─────────────────────────────────────────────────────────── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.breadcrumb-item {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  color: #94a3b8;
+  font-weight: 500;
+  transition: color 0.15s;
+  white-space: nowrap;
+}
+
+.breadcrumb-item a,
+.breadcrumb-item button {
+  color: #94a3b8;
+  font-weight: 500;
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.15s;
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+.breadcrumb-item a:hover,
+.breadcrumb-item button:hover {
+  color: var(--brand);
+}
+
+.breadcrumb-item.active {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.breadcrumb-sep {
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  color: #e2e8f0;
+  flex-shrink: 0;
 }
 
 /* ── Scrollbar utilities ─────────────────────────────────────────────────── */
@@ -136,12 +201,12 @@ input, select, textarea, button {
 
 @utility scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: #1e3a5f22 transparent;
+  scrollbar-color: #0d948822 transparent;
 }
 .scrollbar-thin::-webkit-scrollbar       { width: 4px; }
 .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #1e3a5f22;
+  background: #0d948833;
   border-radius: 99px;
 }
 
@@ -157,8 +222,8 @@ input, select, textarea, button {
 /* ── Stat card ───────────────────────────────────────────────────────────── */
 .stat-card {
   border-radius: var(--radius-card);
-  border: 1px solid #e5e7eb;
-  background: #fff;
+  border: 1px solid var(--border);
+  background: var(--surface);
   padding: 1.25rem;
   box-shadow: var(--shadow-card);
   display: flex;
@@ -178,39 +243,33 @@ input, select, textarea, button {
   transform-origin: left;
   transition: transform 0.25s ease;
 }
-.stat-card:hover { box-shadow: 0 4px 12px rgb(0 0 0 / 0.12); transform: translateY(-1px); }
+.stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
 .stat-card:hover::after { transform: scaleX(1); }
 
-/* Stat values use Syne for big numbers — fintech aesthetic */
 .stat-card .stat-value {
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: -0.03em;
 }
 
+/* ── Sidebar active pill ─────────────────────────────────────────────────── */
+.sidebar-active {
+  background: var(--brand-light);
+  color: var(--brand-dark);
+}
+.sidebar-active .sidebar-icon {
+  color: var(--brand);
+}
+
 /* ── Fit-card ────────────────────────────────────────────────────────────── */
 .fit-card { min-width: 0; word-break: break-word; }
 .fit-card * { min-width: 0; }
 
-/* ── Responsive list ─────────────────────────────────────────────────────── */
-.responsive-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-@media (min-width: 1024px) {
-  .responsive-list { flex-direction: row; flex-wrap: wrap; }
-  .responsive-list > * { flex: 1 1 260px; }
-}
-
 /* ── Conflict card ───────────────────────────────────────────────────────── */
 .conflict-card {
   border-radius: var(--radius-card);
-  border: 1px solid #e5e7eb;
-  background: #fff;
+  border: 1px solid var(--border);
+  background: var(--surface);
   padding: 1rem;
 }
 @media (max-width: 640px) {
@@ -285,7 +344,7 @@ input, select, textarea, button {
 
 .auth-bg {
   min-height: 100svh;
-  background: linear-gradient(135deg, #1e3a5f 0%, #162d4a 60%, #0f1e30 100%);
+  background: linear-gradient(135deg, var(--brand-darker) 0%, var(--brand-dark) 50%, var(--brand) 100%);
   display: flex; align-items: center; justify-content: center; padding: 1rem;
 }
 .auth-card {
@@ -295,7 +354,7 @@ input, select, textarea, button {
 }
 .auth-card-accent {
   height: 4px;
-  background: linear-gradient(90deg, #f59e0b, #fbbf24, #f59e0b);
+  background: linear-gradient(90deg, var(--brand), var(--brand-mid), var(--brand));
 }
 
 /* ── Page container ──────────────────────────────────────────────────────── */
@@ -318,7 +377,7 @@ input, select, textarea, button {
 .trainer-panel { position: fixed; inset: 0; z-index: 50; display: flex; justify-content: flex-end; }
 .trainer-panel-inner {
   width: 100%; max-width: 100%; height: 100%;
-  background: white; box-shadow: -4px 0 30px rgba(0,0,0,0.12);
+  background: white; box-shadow: -4px 0 30px rgba(0,0,0,0.10);
   display: flex; flex-direction: column;
 }
 @media (min-width: 480px) { .trainer-panel-inner { max-width: 28rem; } }
@@ -341,8 +400,8 @@ input, select, textarea, button {
   width: calc(100vw - 2rem); max-height: 560px;
   display: flex; flex-direction: column;
   border-radius: 1rem; background: white;
-  box-shadow: 0 25px 60px rgba(0,0,0,0.2);
-  border: 1px solid #e5e7eb; overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.15);
+  border: 1px solid var(--border); overflow: hidden;
 }
 @media (min-width: 480px) { .ai-panel { width: 380px; right: 1.5rem; } }
 
@@ -359,7 +418,21 @@ input, select, textarea, button {
 .constraint-table-wrap {
   overflow-x: auto;
   border-radius: 0.75rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   background: white;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  box-shadow: var(--shadow-card);
+}
+
+/* ── Responsive list ─────────────────────────────────────────────────────── */
+.responsive-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+@media (min-width: 1024px) {
+  .responsive-list { flex-direction: row; flex-wrap: wrap; }
+  .responsive-list > * { flex: 1 1 260px; }
 }
