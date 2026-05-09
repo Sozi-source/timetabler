@@ -24,8 +24,8 @@ const NAV = [
     label: 'Timetables',
     items: [
       { href: '/timetable',         icon: Calendar, label: 'Master' },
-      { href: '/timetable/cohort',  icon: Calendar, label: 'By Cohort' },
-      { href: '/timetable/trainer', icon: Calendar, label: 'By Trainer' },
+      { href: '/timetable/cohorts',  icon: Calendar, label: 'By Cohort' },
+      { href: '/timetable/trainers', icon: Calendar, label: 'By Trainer' },
     ],
   },
   {

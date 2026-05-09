@@ -10,115 +10,88 @@ import type {
   TermTrainerAssignmentPayload,
 } from '@/types'
 
-// ── Dashboard ─────────────────────────────────────────────────────────────────
+// ── Dashboard ──────────────────────────────────────────────────────────────────
 
-export const getDashboard = () =>
-  api.get('/dashboard/').then(r => r.data.data as DashboardData)
+export const getDashboard = (): Promise<DashboardData> =>
+  api.get('/dashboard/').then((r) => r.data.data)
 
-export const getTrainerDashboard = () =>
-  api.get('/dashboard/trainer/').then(r => r.data.data as TrainerDashboardData)
+export const getTrainerDashboard = (): Promise<TrainerDashboardData> =>
+  api.get('/dashboard/trainer/').then((r) => r.data.data)
 
-// ── Timetable ─────────────────────────────────────────────────────────────────
+// ── Master timetable ───────────────────────────────────────────────────────────
 
 export const getMasterTimetable = (termId: string): Promise<MasterTimetableData> =>
-  api.get(`/timetable/master/?term=${termId}&status=DRAFT`).then(r => {
-    const d = r.data.data
-    if (!d) {
-      return {
-        grid: {},
-        periods: [] as Period[],
-        days: [] as string[],
-        status: 'DRAFT' as const,
-        total_entries: 0,
-      }
-    }
+  api.get('/timetable/master/', { params: { term: termId } }).then((r) => r.data.data)
 
-    const periods: Period[] = (d.periods ?? []).map((p: Record<string, unknown>) => ({
-      ...p,
-      start_time: (p.start_time ?? p.start ?? '') as string,
-      end_time:   (p.end_time   ?? p.end   ?? '') as string,
-      is_break:   (p.is_break   ?? false)          as boolean,
-    } as Period))
-
-    return {
-      grid:          d.grid          ?? {},
-      periods,
-      days:          d.days          ?? [],
-      status:        d.status        ?? 'DRAFT',
-      total_entries: d.total_entries ?? 0,
-    }
-  })
-
+// ── Cohort timetable ───────────────────────────────────────────────────────────
+// Backend: GET /api/timetable/cohort/<uuid:cohort_id>/?term=<uuid>
 export const getCohortTimetable = (cohortId: string, termId: string) =>
   api
-    .get(`/timetable/cohort/?cohort=${cohortId}&term=${termId}`)
-    .then(r => r.data.data)
+    .get(`/timetable/cohort/${cohortId}/`, { params: { term: termId } })
+    .then((r) => r.data.data)
 
+// ── Trainer timetable ──────────────────────────────────────────────────────────
+// Backend: GET /api/timetable/trainer/<uuid:trainer_id>/?term=<uuid>
 export const getTrainerTimetable = (trainerId: string, termId: string) =>
   api
-    .get(`/timetable/trainer/?trainer=${trainerId}&term=${termId}`)
-    .then(r => r.data.data)
+    .get(`/timetable/trainer/${trainerId}/`, { params: { term: termId } })
+    .then((r) => r.data.data)
 
-// ── Conflicts ─────────────────────────────────────────────────────────────────
+// ── Conflicts ──────────────────────────────────────────────────────────────────
 
-export const getConflicts = (termId: string) =>
-  api.get(`/conflicts/?term=${termId}`).then(r => r.data.data as Conflict[])
+export const getConflicts = (termId: string): Promise<Conflict[]> =>
+  api.get('/conflicts/', { params: { term: termId } }).then((r) => {
+    const d = r.data.data
+    return Array.isArray(d) ? d : (d?.results ?? [])
+  })
 
-// ── Mutations ─────────────────────────────────────────────────────────────────
+// ── Scheduled unit CRUD ────────────────────────────────────────────────────────
+// Backend: /api/timetable/entry/<uuid>/ (singular)
 
-export const generateTimetable = (termId: string) =>
-  api.post(`/timetable/generate/`, { term_id: termId }, { timeout: 300_000 }).then(r => r.data)
-
-export const publishDrafts = (termId: string) =>
-  api.post('/timetable/publish/', { term_id: termId }).then(r => r.data)
-
-export const clearDrafts = (termId: string) =>
-  api.delete('/timetable/drafts/', { data: { term_id: termId } }).then(r => r.data)
+export const getScheduledUnits = (termId: string): Promise<ScheduledUnit[]> =>
+  api.get('/timetable/entries/', { params: { term: termId } }).then((r) => {
+    const d = r.data.data
+    return Array.isArray(d) ? d : (d?.results ?? [])
+  })
 
 export const updateScheduledUnit = (id: string, payload: Partial<ScheduledUnit>) =>
-  api.patch(`/timetable/entries/${id}/`, payload).then(r => r.data.data as ScheduledUnit)
+  api.put(`/timetable/entry/${id}/`, payload).then((r) => r.data.data)
 
 export const deleteScheduledUnit = (id: string) =>
-  api.delete(`/timetable/entries/${id}/`).then(r => r.data)
+  api.delete(`/timetable/entry/${id}/`).then(() => ({ ok: true }))
 
-// Aliases used by EntryEditModal
-export const updateEntry = updateScheduledUnit
-export const deleteEntry = deleteScheduledUnit
-export const publishTimetable = publishDrafts
-export const deleteDrafts = clearDrafts
+// ── Generate / Publish ─────────────────────────────────────────────────────────
 
-// ── Term Trainer Assignments ──────────────────────────────────────────────────
+export const generateTimetable = (termId: string) =>
+  api.post('/timetable/generate/', { term: termId }).then((r) => r.data)
 
-export const getTermAssignments = (params?: { term?: string; cohort?: string }) =>
-  api
-    .get('/timetable/term-assignments/', { params })
-    .then(r => r.data.data as TermTrainerAssignment[])
+export const publishTimetable = (termId: string) =>
+  api.post('/timetable/publish/', { term: termId }).then((r) => r.data)
 
-export const getTermAssignmentsByUnit = (params: {
-  term: string
-  curriculum_unit: string
-}) =>
-  api
-    .get('/timetable/term-assignments/by-unit/', { params })
-    .then(r => r.data.data as TermTrainerAssignment[])
+// ── Term trainer assignments ───────────────────────────────────────────────────
+// Backend: /api/term-assignments/ (no timetable/ prefix)
 
-export const createTermAssignment = (data: TermTrainerAssignmentPayload) =>
-  api
-    .post('/timetable/term-assignments/', data)
-    .then(r => r.data.data as TermTrainerAssignment)
+export const getTermAssignments = (termId: string): Promise<TermTrainerAssignment[]> =>
+  api.get('/term-assignments/', { params: { term: termId } }).then((r) => {
+    const d = r.data.data
+    return Array.isArray(d) ? d : (d?.results ?? [])
+  })
 
-export const bulkTermAssignments = (assignments: TermTrainerAssignmentPayload[]) =>
-  api
-    .post('/timetable/term-assignments/bulk/', { assignments })
-    .then(r => r.data.data as { created: number; updated: number; skipped: number })
+export const createTermAssignment = (payload: TermTrainerAssignmentPayload) =>
+  api.post('/term-assignments/', payload).then((r) => r.data.data)
 
 export const updateTermAssignment = (
   id: string,
-  data: Partial<TermTrainerAssignmentPayload>
-) =>
-  api
-    .patch(`/timetable/term-assignments/${id}/`, data)
-    .then(r => r.data.data as TermTrainerAssignment)
+  payload: Partial<TermTrainerAssignmentPayload>
+) => api.put(`/term-assignments/${id}/`, payload).then((r) => r.data.data)
 
 export const deleteTermAssignment = (id: string) =>
-  api.delete(`/timetable/term-assignments/${id}/`).then(r => r.data)
+  api.delete(`/term-assignments/${id}/`).then(() => ({ ok: true }))
+
+// ── Periods ────────────────────────────────────────────────────────────────────
+
+export const getPeriods = (): Promise<Period[]> =>
+  api.get('/periods/').then((r) => {
+    const d = r.data.data
+    return Array.isArray(d) ? d : (d?.results ?? [])
+  })
