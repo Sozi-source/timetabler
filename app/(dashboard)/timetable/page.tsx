@@ -445,7 +445,7 @@ export default function TimetablePage() {
 
   async function handleGenerate() {
     if (!termId || gen.stage === 'submitting' || gen.stage === 'waiting' || gen.stage === 'validating') return
-    setGen({ stage: 'validating', attempt: 0, maxAttempts: MAX_ATTEMPTS, message: 'Checking data…' })
+    setGen({ stage: 'validating', attempt: 0, maxAttempts: MAX_ATTEMPTS, message: 'Checking data\u2026' })
     try {
       const res = await api.get('/timetable/validate/', { params: { term: termId } })
       const vResult: ValidationResult = res.data?.data ?? res.data
@@ -469,7 +469,7 @@ export default function TimetablePage() {
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       setGen({
         stage: 'submitting', attempt, maxAttempts: MAX_ATTEMPTS,
-        message: attempt === 1 ? 'Sending to scheduler…' : `Retrying (${attempt}/${MAX_ATTEMPTS})…`,
+        message: attempt === 1 ? 'Sending to scheduler\u2026' : `Retrying (${attempt}/${MAX_ATTEMPTS})\u2026`,
       })
       try {
         const res = await api.post(
@@ -477,7 +477,7 @@ export default function TimetablePage() {
           { term_id: termId },
           { timeout: 300_000, signal: controller.signal },
         )
-        setGen(g => ({ ...g, stage: 'waiting', message: 'Building timetable…' }))
+        setGen(g => ({ ...g, stage: 'waiting', message: 'Building timetable\u2026' }))
         await new Promise(r => setTimeout(r, POLL_DELAY_MS))
         if (controller.signal.aborted) return
         await invalidateAll()
@@ -490,7 +490,7 @@ export default function TimetablePage() {
           conflicts:        d.conflicts       ?? 0,
         }
         setGen({ stage: 'done', attempt, maxAttempts: MAX_ATTEMPTS, message: 'Generation complete', result })
-        const conflictTxt = result.conflicts > 0 ? ` · ${result.conflicts} conflict${result.conflicts !== 1 ? 's' : ''}` : ''
+        const conflictTxt = result.conflicts > 0 ? ` \u00b7 ${result.conflicts} conflict${result.conflicts !== 1 ? 's' : ''}` : ''
         const pct = result.completion_rate ? ` (${result.completion_rate}%)` : ''
         toast.success(`Generated ${result.placed} entries${pct}${conflictTxt}`)
         return
@@ -648,7 +648,7 @@ export default function TimetablePage() {
           <p className="text-sm text-gray-500 mt-0.5">
             {activeTerm?.name ?? ''}
             {totalEntries > 0 && (
-              <span className="ml-2 text-gray-400 tabular-nums">· {totalEntries} scheduled units</span>
+              <span className="ml-2 text-gray-400 tabular-nums">\u00b7 {totalEntries} scheduled units</span>
             )}
           </p>
         </div>
@@ -699,7 +699,7 @@ export default function TimetablePage() {
             </div>
           )}
 
-          {/* Action buttons */}
+          {/* Generate + Clear Draft — DRAFT only */}
           {status === 'DRAFT' && (
             <>
               <button
@@ -710,7 +710,7 @@ export default function TimetablePage() {
                   isGenerating || isValidating ? 'bg-blue-500 hover:bg-blue-600' : 'bg-[#1e3a5f] hover:bg-[#162d4a]',
                 )}
               >
-                {isValidating ? <><ShieldCheck className="h-4 w-4 animate-pulse" />Validating…</>
+                {isValidating ? <><ShieldCheck className="h-4 w-4 animate-pulse" />Validating&hellip;</>
                   : isGenerating ? <><Loader2 className="h-4 w-4 animate-spin" />Cancel</>
                   : <><BookOpen className="h-4 w-4" />Generate</>}
               </button>
@@ -721,18 +721,21 @@ export default function TimetablePage() {
                   disabled={clearing || isGenerating || isValidating}
                   className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50 transition-all"
                 >
-                  {clearing ? <><Loader2 className="h-4 w-4 animate-spin" />Clearing…</> : <><Trash2 className="h-4 w-4" />Clear Draft</>}
+                  {clearing ? <><Loader2 className="h-4 w-4 animate-spin" />Clearing&hellip;</> : <><Trash2 className="h-4 w-4" />Clear Draft</>}
                 </button>
               )}
-
-              <button
-                onClick={() => handlePublish()}
-                disabled={publishing || totalEntries === 0 || isGenerating || isValidating}
-                className="flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition-all shadow-sm"
-              >
-                {publishing ? <><Loader2 className="h-4 w-4 animate-spin" />Publishing…</> : <><Send className="h-4 w-4" />Publish</>}
-              </button>
             </>
+          )}
+
+          {/* Publish — visible for DRAFT and PUBLISHED */}
+          {(status === 'DRAFT' || status === 'PUBLISHED') && (
+            <button
+              onClick={() => handlePublish()}
+              disabled={publishing || totalEntries === 0 || isGenerating || isValidating}
+              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition-all shadow-sm"
+            >
+              {publishing ? <><Loader2 className="h-4 w-4 animate-spin" />Publishing&hellip;</> : <><Send className="h-4 w-4" />Publish</>}
+            </button>
           )}
 
           <button
