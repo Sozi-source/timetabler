@@ -6,7 +6,7 @@ import {
   Play, CheckCircle, Trash2, AlertTriangle, Loader2,
   Calendar, ChevronRight, BookOpen, Users, DoorOpen,
   TrendingUp, Clock, ShieldCheck, LayoutGrid, GraduationCap,
-  Bell, Layers,
+  Layers,
 } from 'lucide-react'
 import { useDashboard } from '@/hooks/useTimetable'
 import { useTermStore } from '@/store'
@@ -273,7 +273,7 @@ function MobileQuickActions({
   hasConflicts: boolean
   router: ReturnType<typeof useRouter>
   onGenerate: () => void
-  onPublish: () => void
+  onPublish: (force?: boolean) => void
   onClear: () => void
 }) {
   return (
@@ -335,7 +335,7 @@ function DesktopActionCard({
   canPublish: boolean
   router: ReturnType<typeof useRouter>
   onGenerate: () => void
-  onPublish: () => void
+  onPublish: (force?: boolean) => void
   onClear: () => void
 }) {
   return (
@@ -360,7 +360,7 @@ function DesktopActionCard({
             ? 'Resolve conflicts before publishing'
             : 'No drafts to publish'
         }
-        onClick={onPublish}
+        onClick={() => onPublish()}
         loading={busy === 'publish'}
         disabled={!!busy || !canPublish}
         variant="success"
@@ -486,10 +486,12 @@ function SetupSection({ router }: { router: ReturnType<typeof useRouter> }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const router = useRouter()
+  const router         = useRouter()
   const { activeTerm } = useTermStore()
   const { data, isLoading, isError, refetch } = useDashboard()
   const [busy, setBusy] = useState<Action>(null)
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
 
   async function handleGenerate() {
     if (!activeTerm?.id) { toast.error('No active term'); return }
@@ -498,22 +500,30 @@ export default function DashboardPage() {
       await generateTimetable(activeTerm.id)
       toast.success('Timetable generated')
       refetch()
-    } catch { toast.error('Failed to generate') }
-    finally { setBusy(null) }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+      toast.error(msg ?? 'Failed to generate')
+    } finally { setBusy(null) }
   }
 
-  async function handlePublish() {
+  async function handlePublish(force = false) {
     if (!activeTerm?.id) { toast.error('No active term'); return }
     setBusy('publish')
     try {
-      await publishTimetable(activeTerm.id)
+      await publishTimetable(activeTerm.id, force)
       toast.success('Drafts published')
       refetch()
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status
-      if (status === 400)      toast.success('Already published')
-      else if (status === 409) toast.error('Resolve conflicts first')
-      else                     toast.error('Failed to publish')
+      if (status === 400)      { toast.success('Already published'); refetch() }
+      else if (status === 409) {
+        const ok = window.confirm('High severity conflicts exist. Force-publish anyway?')
+        if (ok) { setBusy(null); await handlePublish(true); return }
+        else    toast.error('Resolve conflicts first')
+      } else {
+        const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+        toast.error(msg ?? 'Failed to publish')
+      }
     } finally { setBusy(null) }
   }
 
@@ -525,8 +535,10 @@ export default function DashboardPage() {
       await deleteDrafts(activeTerm.id)
       toast.success('Drafts cleared')
       refetch()
-    } catch { toast.error('Failed to clear drafts') }
-    finally { setBusy(null) }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+      toast.error(msg ?? 'Failed to clear drafts')
+    } finally { setBusy(null) }
   }
 
   // ── Loading ────────────────────────────────────────────────────────────────

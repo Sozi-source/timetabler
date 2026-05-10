@@ -602,20 +602,20 @@ export default function TimetablePage() {
   }
 
   async function handleClearDraft() {
-    if (!termId) return
-    const confirmed = window.confirm('Delete ALL draft entries for this term? This cannot be undone.')
-    if (!confirmed) return
-    setClearing(true)
-    try {
-      await api.delete('/timetable/drafts/', { data: { term_id: termId } })
-      await invalidateAll()
-      setSelectedCohort(null)
-      setGen({ stage: 'idle', attempt: 0, maxAttempts: MAX_ATTEMPTS, message: '' })
-      toast.success('Draft cleared.')
-    } catch (err: unknown) {
-      toast.error((err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Could not clear draft.')
-    } finally { setClearing(false) }
-  }
+  if (!termId) return
+  const confirmed = window.confirm('Delete ALL draft entries for this term? This cannot be undone.')
+  if (!confirmed) return
+  setClearing(true)
+  try {
+    await api.delete('/timetable/drafts/', { params: { term: termId } })  // ← params not data
+    await invalidateAll()
+    setSelectedCohort(null)
+    setGen({ stage: 'idle', attempt: 0, maxAttempts: MAX_ATTEMPTS, message: '' })
+    toast.success('Draft cleared.')
+  } catch (err: unknown) {
+    toast.error((err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Could not clear draft.')
+  } finally { setClearing(false) }
+}
 
   const statusBadge: Record<TimetableStatus, string> = {
     DRAFT:     'bg-amber-50 text-amber-700 border-amber-200 ring-amber-200',
