@@ -12,13 +12,14 @@ import {
 } from '@/types'
 import api from '@/lib/api'
 import TimetableGrid from '@/components/features/timetable/TimetableGrid'
+import ExportButton from '@/components/features/timetable/ExportButton'
 import TimetableAI from '@/components/features/timetable/TimetableAI'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import {
   RefreshCw, Trash2, Send, Loader2, Users, BookOpen,
   AlertTriangle, CheckCircle2, ChevronDown, XCircle,
-  ShieldCheck, X, ChevronRight, Zap, ExternalLink,
+  ShieldCheck, X, Zap, ExternalLink,
   ChevronUp, AlertCircle, Info, ArrowRight, RotateCcw,
 } from 'lucide-react'
 
@@ -78,11 +79,11 @@ const RETRY_DELAY_MS = 1_500
 
 function getIssueConfig(issue: ValidationIssue): { label: string; fixLabel?: string; fixPath?: string } {
   switch (issue.type) {
-    case 'NO_TRAINER':                return { label: 'No trainer assigned',       fixLabel: 'Assign trainer \u2192', fixPath: '/setup/units-on-offer' }
-    case 'TRAINER_OVERLOAD':          return { label: 'Trainer overloaded',        fixLabel: 'View trainers \u2192',  fixPath: '/setup/trainers' }
-    case 'SINGLE_TRAINER_BOTTLENECK': return { label: 'Single-trainer bottleneck', fixLabel: 'View trainers \u2192',  fixPath: '/setup/trainers' }
-    case 'NO_SUITABLE_ROOM':          return { label: 'No suitable room',          fixLabel: 'View rooms \u2192',     fixPath: '/setup/rooms' }
-    case 'SLOT_SHORTAGE':             return { label: 'Slot shortage',             fixLabel: 'View constraints \u2192', fixPath: '/constraints' }
+    case 'NO_TRAINER':                return { label: 'No trainer assigned',       fixLabel: 'Assign trainer →', fixPath: '/setup/units-on-offer' }
+    case 'TRAINER_OVERLOAD':          return { label: 'Trainer overloaded',        fixLabel: 'View trainers →',  fixPath: '/setup/trainers' }
+    case 'SINGLE_TRAINER_BOTTLENECK': return { label: 'Single-trainer bottleneck', fixLabel: 'View trainers →',  fixPath: '/setup/trainers' }
+    case 'NO_SUITABLE_ROOM':          return { label: 'No suitable room',          fixLabel: 'View rooms →',     fixPath: '/setup/rooms' }
+    case 'SLOT_SHORTAGE':             return { label: 'Slot shortage',             fixLabel: 'View constraints →', fixPath: '/constraints' }
     default:                          return { label: issue.type }
   }
 }
@@ -172,20 +173,18 @@ function IssueRow({ issue, variant, onNavigate }: {
 
 // ─── ValidateModal ────────────────────────────────────────────────────────────
 
-function ValidateModal({ result, onProceed, onCancel }: {
-  result:    ValidationResult
-  onProceed: () => void
-  onCancel:  () => void
+function ValidateModal({ result, onProceed, onCancel, onNavigate }: {
+  result:     ValidationResult
+  onProceed:  () => void
+  onCancel:   () => void
+  onNavigate: (path: string) => void
 }) {
-  const router = useRouter()
   const [warningsOpen, setWarningsOpen] = useState(true)
 
   const hasBlocking = result.blocking.length > 0
   const hasWarnings = result.warnings.length > 0
   const allClear    = !hasBlocking && !hasWarnings
   const severity    = hasBlocking ? 'error' : hasWarnings ? 'warning' : 'ok'
-
-  function handleNavigate(path: string) { onCancel(); router.push(path) }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -269,7 +268,7 @@ function ValidateModal({ result, onProceed, onCancel }: {
                 </p>
               </div>
               {result.blocking.map((issue, i) => (
-                <IssueRow key={i} issue={issue} variant="blocking" onNavigate={handleNavigate} />
+                <IssueRow key={i} issue={issue} variant="blocking" onNavigate={onNavigate} />
               ))}
             </div>
           )}
@@ -290,7 +289,7 @@ function ValidateModal({ result, onProceed, onCancel }: {
               {warningsOpen && (
                 <div className="space-y-1.5">
                   {result.warnings.map((issue, i) => (
-                    <IssueRow key={i} issue={issue} variant="warning" onNavigate={handleNavigate} />
+                    <IssueRow key={i} issue={issue} variant="warning" onNavigate={onNavigate} />
                   ))}
                 </div>
               )}
@@ -419,6 +418,7 @@ function RevertConfirmModal({ onConfirm, onCancel }: {
 export default function TimetablePage() {
   const { activeTerm } = useTermStore()
   const qc             = useQueryClient()
+  const router         = useRouter()
   const termId         = activeTerm?.id ?? ''
 
   const { data, isLoading, isError, refetch } = useMasterTimetable(termId)
@@ -502,7 +502,7 @@ export default function TimetablePage() {
 
   async function handleGenerate() {
     if (!termId || gen.stage === 'submitting' || gen.stage === 'waiting' || gen.stage === 'validating') return
-    setGen({ stage: 'validating', attempt: 0, maxAttempts: MAX_ATTEMPTS, message: 'Checking data\u2026' })
+    setGen({ stage: 'validating', attempt: 0, maxAttempts: MAX_ATTEMPTS, message: 'Checking data…' })
     try {
       const res = await api.get('/timetable/validate/', { params: { term: termId } })
       const vResult: ValidationResult = res.data?.data ?? res.data
@@ -526,7 +526,7 @@ export default function TimetablePage() {
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       setGen({
         stage: 'submitting', attempt, maxAttempts: MAX_ATTEMPTS,
-        message: attempt === 1 ? 'Sending to scheduler\u2026' : `Retrying (${attempt}/${MAX_ATTEMPTS})\u2026`,
+        message: attempt === 1 ? 'Sending to scheduler…' : `Retrying (${attempt}/${MAX_ATTEMPTS})…`,
       })
       try {
         const res = await api.post(
@@ -534,7 +534,7 @@ export default function TimetablePage() {
           { term_id: termId },
           { timeout: 300_000, signal: controller.signal },
         )
-        setGen(g => ({ ...g, stage: 'waiting', message: 'Building timetable\u2026' }))
+        setGen(g => ({ ...g, stage: 'waiting', message: 'Building timetable…' }))
         await new Promise(r => setTimeout(r, POLL_DELAY_MS))
         if (controller.signal.aborted) return
         await invalidateAll()
@@ -547,7 +547,7 @@ export default function TimetablePage() {
           conflicts:        d.conflicts       ?? 0,
         }
         setGen({ stage: 'done', attempt, maxAttempts: MAX_ATTEMPTS, message: 'Generation complete', result })
-        const conflictTxt = result.conflicts > 0 ? ` \u00b7 ${result.conflicts} conflict${result.conflicts !== 1 ? 's' : ''}` : ''
+        const conflictTxt = result.conflicts > 0 ? ` · ${result.conflicts} conflict${result.conflicts !== 1 ? 's' : ''}` : ''
         const pct = result.completion_rate ? ` (${result.completion_rate}%)` : ''
         toast.success(`Generated ${result.placed} entries${pct}${conflictTxt}`)
         return
@@ -602,20 +602,25 @@ export default function TimetablePage() {
   }
 
   async function handleClearDraft() {
-  if (!termId) return
-  const confirmed = window.confirm('Delete ALL draft entries for this term? This cannot be undone.')
-  if (!confirmed) return
-  setClearing(true)
-  try {
-    await api.delete('/timetable/drafts/', { params: { term: termId } })  // ← params not data
-    await invalidateAll()
-    setSelectedCohort(null)
-    setGen({ stage: 'idle', attempt: 0, maxAttempts: MAX_ATTEMPTS, message: '' })
-    toast.success('Draft cleared.')
-  } catch (err: unknown) {
-    toast.error((err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Could not clear draft.')
-  } finally { setClearing(false) }
-}
+    if (!termId) return
+    const confirmed = window.confirm('Delete ALL draft entries for this term? This cannot be undone.')
+    if (!confirmed) return
+    setClearing(true)
+    try {
+      await api.delete('/timetable/drafts/', { params: { term: termId } })
+      await invalidateAll()
+      setSelectedCohort(null)
+      setGen({ stage: 'idle', attempt: 0, maxAttempts: MAX_ATTEMPTS, message: '' })
+      toast.success('Draft cleared.')
+    } catch (err: unknown) {
+      toast.error((err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Could not clear draft.')
+    } finally { setClearing(false) }
+  }
+
+  function handleValidationNavigate(path: string) {
+    setValidationResult(null)
+    router.push(path)
+  }
 
   const statusBadge: Record<TimetableStatus, string> = {
     DRAFT:     'bg-amber-50 text-amber-700 border-amber-200 ring-amber-200',
@@ -623,7 +628,6 @@ export default function TimetablePage() {
     CANCELLED: 'bg-red-50 text-red-700 border-red-200 ring-red-200',
   }
 
-  // Progress bar component
   const GenProgressBar = () => {
     if (gen.stage === 'idle') return null
     const isActive = isGenerating || isValidating
@@ -711,6 +715,7 @@ export default function TimetablePage() {
           result={validationResult}
           onProceed={() => { setValidationResult(null); setProceedAfterValidate(true) }}
           onCancel={() => setValidationResult(null)}
+          onNavigate={handleValidationNavigate}
         />
       )}
 
@@ -835,6 +840,15 @@ export default function TimetablePage() {
                 ? <><Loader2 className="h-4 w-4 animate-spin" />Publishing&hellip;</>
                 : <><Send className="h-4 w-4" />Publish</>}
             </button>
+          )}
+
+          {/* Export — visible when there are entries */}
+          {isDataReady && totalEntries > 0 && (
+            <ExportButton
+              url="/api/export/master/"
+              params={{ term: termId }}
+              label="master"
+            />
           )}
 
           <button
