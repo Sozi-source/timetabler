@@ -145,7 +145,7 @@ export default function AppShell({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sidebar — desktop always visible, mobile overlay */}
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onOpen={() => setSidebarOpen(true)} />
 
       {/* Main column — offset on desktop for sidebar */}
       <div className="lg:pl-60 flex flex-col min-h-screen">

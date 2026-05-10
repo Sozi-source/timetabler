@@ -1,6 +1,6 @@
-/**
+﻿/**
  * useTermAssignments
- * ──────────────────
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  * React Query hook for fetching and mutating TermTrainerAssignments.
  *
  * Usage:
@@ -30,7 +30,7 @@ export function useTermAssignments(termId: string, cohortId: string) {
   const invalidate = () => qc.invalidateQueries({ queryKey: key })
 
   const bulkSave = useMutation({
-    mutationFn: (rows: TermTrainerAssignmentPayload[]) => bulkTermAssignments(rows),
+    mutationFn: (rows: TermTrainerAssignmentPayload[]) => bulkTermAssignments(termId, rows),
     onSuccess:  invalidate,
   })
 
@@ -39,7 +39,7 @@ export function useTermAssignments(termId: string, cohortId: string) {
     onSuccess:  invalidate,
   })
 
-  /** Map of curriculum_unit_id → TermTrainerAssignment for fast lookup */
+  /** Map of curriculum_unit_id â†’ TermTrainerAssignment for fast lookup */
   const assignmentMap: Record<string, TermTrainerAssignment> = Object.fromEntries(
     (query.data ?? []).map(a => [a.curriculum_unit, a])
   )
