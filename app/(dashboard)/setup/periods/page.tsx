@@ -30,6 +30,12 @@ function getEnd(p: Period): string {
   return (p.end ?? p.end_time ?? '').slice(0, 5)
 }
 
+function formatDuration(duration: number) {
+  const h = Math.floor(duration)
+  const m = Math.round((duration - h) * 60)
+  return `${h > 0 ? `${h}h ` : ''}${m > 0 ? `${m}m` : ''}`
+}
+
 export default function PeriodsPage() {
   const qc = useQueryClient()
   const { data: periods = [], isLoading } = usePeriods()
@@ -118,70 +124,133 @@ export default function PeriodsPage() {
       onAdd={openCreate}
       addLabel="Add period"
     >
-      <SetupTable
-        loading={isLoading}
-        rows={sorted}
-        deletingId={delId}
-        onEdit={openEdit}
-        onDelete={handleDelete}
-        emptyIcon={<Clock className="h-10 w-10" />}
-        emptyMsg="No periods defined yet"
-        onEmptyAdd={openCreate}
-        cols={[
-          {
-            header: '#',
-            width: '48px',
-            render: p => (
-              <span className="text-gray-400 text-xs font-mono tabular-nums">{p.order ?? '—'}</span>
-            ),
-          },
-          {
-            header: 'Label',
-            render: p => (
-              <span className="font-semibold text-gray-800">{p.label || '—'}</span>
-            ),
-          },
-          {
-            header: 'Start',
-            render: p => (
-              <span className="font-mono text-sm text-gray-700 tabular-nums">{getStart(p) || '—'}</span>
-            ),
-          },
-          {
-            header: 'End',
-            render: p => (
-              <span className="font-mono text-sm text-gray-700 tabular-nums">{getEnd(p) || '—'}</span>
-            ),
-          },
-          {
-            header: 'Duration',
-            render: p => {
-              const duration = p.duration ?? p.duration_hours
-              if (!duration) return <span className="text-gray-400 text-xs">—</span>
-              const h = Math.floor(duration)
-              const m = Math.round((duration - h) * 60)
-              return (
-                <span className="text-sm text-gray-600 tabular-nums font-mono">
-                  {h > 0 ? `${h}h ` : ''}{m > 0 ? `${m}m` : ''}
-                </span>
-              )
+      {/* Mobile card list — shown on small screens */}
+      <div className="sm:hidden space-y-2">
+        {isLoading ? (
+          <div className="py-10 text-center text-sm text-gray-400">Loading…</div>
+        ) : sorted.length === 0 ? (
+          <div className="py-10 flex flex-col items-center gap-2 text-gray-400">
+            <Clock className="h-10 w-10" />
+            <p className="text-sm">No periods defined yet</p>
+            <button
+              onClick={openCreate}
+              className="text-sm text-blue-600 underline underline-offset-2"
+            >
+              Add your first period
+            </button>
+          </div>
+        ) : (
+          sorted.map(p => {
+            const duration = p.duration ?? p.duration_hours
+            return (
+              <div
+                key={p.id}
+                className="rounded-2xl border border-gray-100 bg-white px-4 py-3 flex items-center justify-between gap-3"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-xs font-mono text-gray-300 w-5 shrink-0">{p.order}</span>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-800 text-sm truncate">{p.label || '—'}</p>
+                    <p className="text-xs text-gray-400 font-mono tabular-nums">
+                      {getStart(p)} – {getEnd(p)}
+                      {duration ? ` · ${formatDuration(duration)}` : ''}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className={cn(
+                    'rounded-full px-2 py-0.5 text-xs font-semibold ring-1',
+                    p.is_break
+                      ? 'bg-gray-50 text-gray-500 ring-gray-200'
+                      : 'bg-blue-50 text-blue-700 ring-blue-200'
+                  )}>
+                    {p.is_break ? 'Break' : 'Teaching'}
+                  </span>
+                  <button
+                  onClick={() => openEdit(p)}
+                  className="hidden sm:inline-flex text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(p)}
+                  disabled={delId === p.id}
+                  className="hidden sm:inline-flex text-xs text-red-400 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-40"
+                >
+                  {delId === p.id ? '…' : 'Delete'}
+                </button>
+                </div>
+              </div>
+            )
+          })
+        )}
+      </div>
+
+      {/* Desktop table — hidden on small screens */}
+      <div className="hidden sm:block">
+        <SetupTable
+          loading={isLoading}
+          rows={sorted}
+          deletingId={delId}
+          onEdit={openEdit}
+          onDelete={handleDelete}
+          emptyIcon={<Clock className="h-10 w-10" />}
+          emptyMsg="No periods defined yet"
+          onEmptyAdd={openCreate}
+          cols={[
+            {
+              header: '#',
+              width: '48px',
+              render: p => (
+                <span className="text-gray-400 text-xs font-mono tabular-nums">{p.order ?? '—'}</span>
+              ),
             },
-          },
-          {
-            header: 'Type',
-            render: p => (
-              <span className={cn(
-                'rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1',
-                p.is_break
-                  ? 'bg-gray-50 text-gray-500 ring-gray-200'
-                  : 'bg-blue-50 text-blue-700 ring-blue-200'
-              )}>
-                {p.is_break ? 'Break' : 'Teaching'}
-              </span>
-            ),
-          },
-        ]}
-      />
+            {
+              header: 'Label',
+              render: p => (
+                <span className="font-semibold text-gray-800">{p.label || '—'}</span>
+              ),
+            },
+            {
+              header: 'Start',
+              render: p => (
+                <span className="font-mono text-sm text-gray-700 tabular-nums">{getStart(p) || '—'}</span>
+              ),
+            },
+            {
+              header: 'End',
+              render: p => (
+                <span className="font-mono text-sm text-gray-700 tabular-nums">{getEnd(p) || '—'}</span>
+              ),
+            },
+            {
+              header: 'Duration',
+              render: p => {
+                const duration = p.duration ?? p.duration_hours
+                if (!duration) return <span className="text-gray-400 text-xs">—</span>
+                return (
+                  <span className="text-sm text-gray-600 tabular-nums font-mono">
+                    {formatDuration(duration)}
+                  </span>
+                )
+              },
+            },
+            {
+              header: 'Type',
+              render: p => (
+                <span className={cn(
+                  'rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1',
+                  p.is_break
+                    ? 'bg-gray-50 text-gray-500 ring-gray-200'
+                    : 'bg-blue-50 text-blue-700 ring-blue-200'
+                )}>
+                  {p.is_break ? 'Break' : 'Teaching'}
+                </span>
+              ),
+            },
+          ]}
+        />
+      </div>
 
       <SetupModal
         open={open}
@@ -204,8 +273,8 @@ export default function PeriodsPage() {
           />
         </div>
 
-        {/* Time range */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* Time range — stacks to single col on mobile */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
               Start time <span className="text-red-400 normal-case tracking-normal font-normal">*</span>
