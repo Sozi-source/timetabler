@@ -3,13 +3,17 @@
 type DashboardTerm = NonNullable<DashboardData['term']>
 
 export default function TermProgress({ term }: { term: DashboardTerm }) {
-  const pct = term.teaching_weeks > 0
-    ? Math.min(100, Math.round(
-        ((term.teaching_weeks - term.weeks_remaining) / term.teaching_weeks) * 100
-      ))
-    : 0
-
   const weekNum = term.current_week ?? term.week_number ?? 0
+  const totalWeeks = term.teaching_weeks ?? 0
+
+  // Prefer backend-calculated pct; fall back to week-based calculation
+  const pct: number = (() => {
+    if ((term as any).progress_pct != null) return Math.round((term as any).progress_pct)
+    if (totalWeeks > 0) return Math.min(100, Math.round((weekNum / totalWeeks) * 100))
+    return 0
+  })()
+
+  const weeksRemaining = term.weeks_remaining ?? Math.max(0, totalWeeks - weekNum)
   const isComplete = pct >= 100
 
   return (
@@ -31,11 +35,11 @@ export default function TermProgress({ term }: { term: DashboardTerm }) {
           <div className="text-right">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Week</p>
             <p className="text-2xl font-bold text-[#1e3a5f] mt-1 tabular-nums leading-none">{weekNum}</p>
-            <p className="text-xs text-gray-400 mt-0.5">of {term.teaching_weeks}</p>
+            <p className="text-xs text-gray-400 mt-0.5">of {totalWeeks}</p>
           </div>
           <div className="text-right">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Remaining</p>
-            <p className="text-2xl font-bold text-[#1e3a5f] mt-1 tabular-nums leading-none">{term.weeks_remaining}</p>
+            <p className="text-2xl font-bold text-[#1e3a5f] mt-1 tabular-nums leading-none">{weeksRemaining}</p>
             <p className="text-xs text-gray-400 mt-0.5">weeks</p>
           </div>
           <div className="text-right">
