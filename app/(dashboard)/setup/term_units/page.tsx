@@ -11,78 +11,31 @@ import { cn } from '@/lib/utils'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface Trainer {
-  id: string
-  full_name: string
-  short_name: string
-}
-
-interface QualifiedTrainer {
-  id: string
-  name: string
-}
-
+interface Trainer { id: string; full_name: string; short_name: string }
+interface QualifiedTrainer { id: string; name: string }
 interface CurriculumUnit {
-  id: string
-  code: string
-  name: string
-  unit_type: string
-  periods_per_week: number
-  is_outsourced: boolean
-  qualified_trainers: QualifiedTrainer[]
+  id: string; code: string; name: string; unit_type: string
+  periods_per_week: number; is_outsourced: boolean; qualified_trainers: QualifiedTrainer[]
 }
-
 interface Cohort {
-  id: string
-  name: string
-  current_term: number
-  programme: string
-  programme_id: string
-  start_year: number
-  start_month: number
+  id: string; name: string; current_term: number; programme: string
+  programme_id: string; start_year: number; start_month: number
 }
-
-interface Programme {
-  id: string
-  code: string
-  name: string
-  total_terms: number
-  sharing_group: string
-}
-
+interface Programme { id: string; code: string; name: string; total_terms: number; sharing_group: string }
 interface UnitRow {
-  unitId: string
-  unitCode: string
-  unitName: string
-  unitType: string
-  periodsPerWeek: number
-  isOutsourced: boolean
-  qualifiedTrainers: QualifiedTrainer[]
-  currentTrainerId: string | null
-  saving: boolean
-  dirty: boolean
+  unitId: string; unitCode: string; unitName: string; unitType: string
+  periodsPerWeek: number; isOutsourced: boolean; qualifiedTrainers: QualifiedTrainer[]
+  currentTrainerId: string | null; saving: boolean; dirty: boolean
 }
-
 interface CombinedRow {
-  key: string
-  unitName: string
-  unitCode: string
-  unitType: string
-  periodsPerWeek: number
-  isOutsourced: boolean
-  qualifiedTrainers: QualifiedTrainer[]
+  key: string; unitName: string; unitCode: string; unitType: string
+  periodsPerWeek: number; isOutsourced: boolean; qualifiedTrainers: QualifiedTrainer[]
   cohorts: { cohortId: string; cohortName: string; unitId: string }[]
-  currentTrainerId: string | null
-  saving: boolean
-  dirty: boolean
+  currentTrainerId: string | null; saving: boolean; dirty: boolean
 }
-
 interface CohortSection {
-  cohortId: string
-  cohortName: string
-  programme: string
-  currentTerm: number
-  units: UnitRow[]
+  cohortId: string; cohortName: string; programme: string
+  currentTerm: number; units: UnitRow[]
 }
 
 // ─── API helper ───────────────────────────────────────────────────────────────
@@ -96,20 +49,20 @@ async function fetchAll<T>(url: string): Promise<T> {
   return d
 }
 
-// ─── Unit type config ─────────────────────────────────────────────────────────
+// ─── Unit type config — teal-anchored, minimal palette ───────────────────────
 
 const TYPE_CONFIG: Record<string, { bg: string; text: string; dot: string }> = {
-  Core:      { bg: 'bg-blue-50',   text: 'text-blue-700',   dot: 'bg-blue-400' },
-  Elective:  { bg: 'bg-teal-50',   text: 'text-teal-700',   dot: 'bg-teal-400' },
-  Practical: { bg: 'bg-amber-50',  text: 'text-amber-700',  dot: 'bg-amber-400' },
-  Project:   { bg: 'bg-rose-50',   text: 'text-rose-700',   dot: 'bg-rose-400' },
+  Core:      { bg: 'bg-teal-50',   text: 'text-teal-700',   dot: 'bg-teal-400' },
+  Elective:  { bg: 'bg-slate-50',  text: 'text-slate-600',  dot: 'bg-slate-400' },
+  Practical: { bg: 'bg-teal-50/60',text: 'text-teal-600',   dot: 'bg-teal-300' },
+  Project:   { bg: 'bg-slate-100', text: 'text-slate-700',  dot: 'bg-slate-500' },
 }
 
 function TypeBadge({ type }: { type: string }) {
-  const cfg = TYPE_CONFIG[type] ?? { bg: 'bg-gray-50', text: 'text-gray-600', dot: 'bg-gray-400' }
+  const cfg = TYPE_CONFIG[type] ?? { bg: 'bg-gray-50', text: 'text-gray-500', dot: 'bg-gray-300' }
   return (
     <span className={cn(
-      'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase',
+      'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold tracking-widest uppercase',
       cfg.bg, cfg.text,
     )}>
       <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', cfg.dot)} />
@@ -123,14 +76,9 @@ function TypeBadge({ type }: { type: string }) {
 function TrainerDropdown({
   trainers, allTrainers, value, saving, onChange, onClear, isLocked, lockedReason,
 }: {
-  trainers: QualifiedTrainer[]
-  allTrainers: Trainer[]
-  value: string | null
-  saving: boolean
-  onChange: (id: string) => void
-  onClear: () => void
-  isLocked?: boolean
-  lockedReason?: string
+  trainers: QualifiedTrainer[]; allTrainers: Trainer[]; value: string | null
+  saving: boolean; onChange: (id: string) => void; onClear: () => void
+  isLocked?: boolean; lockedReason?: string
 }) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -150,17 +98,13 @@ function TrainerDropdown({
 
   const close = () => { setOpen(false); setSearch('') }
 
-  if (isLocked) {
-    return (
-      <div
-        title={lockedReason}
-        className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-xs text-gray-400 cursor-not-allowed"
-      >
-        <Link2 className="h-3 w-3 shrink-0" />
-        <span className="truncate max-w-[120px]">{selectedName ?? 'Linked'}</span>
-      </div>
-    )
-  }
+  if (isLocked) return (
+    <div title={lockedReason}
+      className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-100 bg-gray-50 text-xs text-gray-400 cursor-not-allowed">
+      <Link2 className="h-3 w-3 shrink-0 text-teal-400" />
+      <span className="truncate max-w-[120px]">{selectedName ?? 'Linked'}</span>
+    </div>
+  )
 
   return (
     <div className="relative w-full">
@@ -169,27 +113,23 @@ function TrainerDropdown({
           onClick={() => !saving && setOpen(o => !o)}
           disabled={saving}
           className={cn(
-            'flex items-center gap-2 pl-3.5 pr-3 py-2 rounded-xl text-xs font-semibold border transition-all w-full',
-            'justify-between focus:outline-none focus:ring-2 focus:ring-offset-1',
+            'flex items-center gap-2 pl-3.5 pr-3 py-2 rounded-xl text-xs font-semibold border transition-all w-full justify-between',
+            'focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-teal-300/50',
             value
-              ? 'bg-[#1a2942] border-[#1a2942] text-white hover:bg-[#243652] focus:ring-[#1a2942]/40'
-              : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700 focus:ring-gray-300',
+              ? 'bg-teal-600 border-teal-600 text-white hover:bg-teal-700'
+              : 'bg-white border-gray-200 text-gray-400 hover:border-teal-200 hover:text-teal-600',
             saving && 'opacity-50 cursor-wait',
           )}
         >
-          <span className="truncate">
-            {saving ? 'Saving…' : selectedName ?? 'Assign trainer'}
-          </span>
+          <span className="truncate">{saving ? 'Saving…' : selectedName ?? 'Assign trainer'}</span>
           {saving
             ? <Loader2 className="h-3 w-3 animate-spin shrink-0" />
             : <ChevronDown className={cn('h-3 w-3 shrink-0 transition-transform', open && 'rotate-180')} />}
         </button>
         {value && !saving && (
-          <button
-            onClick={onClear}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-rose-500 hover:bg-rose-50 transition-all shrink-0"
-            title="Remove assignment"
-          >
+          <button onClick={onClear}
+            className="p-1.5 rounded-lg text-gray-300 hover:text-gray-500 hover:bg-gray-100 transition-all shrink-0"
+            title="Remove assignment">
             <X className="h-3.5 w-3.5" />
           </button>
         )}
@@ -198,38 +138,28 @@ function TrainerDropdown({
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={close} />
-          <div className="absolute right-0 z-40 mt-2 w-64 bg-white border border-gray-100 rounded-2xl shadow-2xl shadow-gray-200/80 overflow-hidden">
+          <div className="absolute right-0 z-40 mt-2 w-64 bg-white border border-gray-100 rounded-2xl shadow-xl shadow-gray-200/60 overflow-hidden">
             <div className="p-2.5 border-b border-gray-50">
               <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-xl">
                 <Search className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                <input
-                  autoFocus
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
+                <input autoFocus value={search} onChange={e => setSearch(e.target.value)}
                   placeholder="Search trainers…"
-                  className="text-xs bg-transparent outline-none flex-1 text-gray-700 placeholder:text-gray-400"
-                />
+                  className="text-xs bg-transparent outline-none flex-1 text-gray-700 placeholder:text-gray-400" />
               </div>
             </div>
             <ul className="max-h-56 overflow-y-auto py-1.5">
               {filteredQ.length > 0 && (
                 <>
-                  <li className="px-3.5 pt-2.5 pb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                    Qualified
-                  </li>
+                  <li className="px-3.5 pt-2.5 pb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">Qualified</li>
                   {filteredQ.map(t => (
                     <li key={t.id}>
-                      <button
-                        onClick={() => { onChange(t.id); close() }}
+                      <button onClick={() => { onChange(t.id); close() }}
                         className={cn(
                           'w-full text-left px-3.5 py-2.5 text-xs transition-colors flex items-center gap-2',
-                          t.id === value
-                            ? 'text-[#1a2942] font-semibold bg-blue-50'
-                            : 'text-gray-700 hover:bg-gray-50',
-                        )}
-                      >
+                          t.id === value ? 'text-teal-700 font-semibold bg-teal-50' : 'text-gray-700 hover:bg-gray-50',
+                        )}>
                         <span className="flex-1 truncate">{t.name}</span>
-                        {t.id === value && <CheckCircle2 className="h-3.5 w-3.5 text-[#1a2942] shrink-0" />}
+                        {t.id === value && <CheckCircle2 className="h-3.5 w-3.5 text-teal-500 shrink-0" />}
                       </button>
                     </li>
                   ))}
@@ -242,18 +172,14 @@ function TrainerDropdown({
                   </li>
                   {filteredO.map(t => (
                     <li key={t.id}>
-                      <button
-                        onClick={() => { onChange(t.id); close() }}
+                      <button onClick={() => { onChange(t.id); close() }}
                         className={cn(
                           'w-full text-left px-3.5 py-2.5 text-xs transition-colors flex items-center gap-2',
-                          t.id === value
-                            ? 'text-[#1a2942] font-semibold bg-blue-50'
-                            : 'text-gray-600 hover:bg-gray-50',
-                        )}
-                      >
+                          t.id === value ? 'text-teal-700 font-semibold bg-teal-50' : 'text-gray-600 hover:bg-gray-50',
+                        )}>
                         <span className="flex-1 truncate">{t.short_name}</span>
                         <span className="text-[10px] text-gray-400 truncate max-w-[80px]">{t.full_name}</span>
-                        {t.id === value && <CheckCircle2 className="h-3.5 w-3.5 text-[#1a2942] shrink-0" />}
+                        {t.id === value && <CheckCircle2 className="h-3.5 w-3.5 text-teal-500 shrink-0" />}
                       </button>
                     </li>
                   ))}
@@ -270,7 +196,7 @@ function TrainerDropdown({
   )
 }
 
-// ─── Progress Ring ────────────────────────────────────────────────────────────
+// ─── Progress Ring — teal ─────────────────────────────────────────────────────
 
 function ProgressRing({ pct, allDone }: { pct: number; allDone: boolean }) {
   const r = 28
@@ -278,19 +204,17 @@ function ProgressRing({ pct, allDone }: { pct: number; allDone: boolean }) {
   const offset = circ - (pct / 100) * circ
   return (
     <svg width="72" height="72" viewBox="0 0 72 72" className="shrink-0">
-      <circle cx="36" cy="36" r={r} fill="none" stroke="#f1f5f9" strokeWidth="6" />
+      <circle cx="36" cy="36" r={r} fill="none" stroke="#f0fdfa" strokeWidth="6" />
       <circle
         cx="36" cy="36" r={r} fill="none"
-        stroke={allDone ? '#10b981' : '#1a2942'}
-        strokeWidth="6"
-        strokeLinecap="round"
-        strokeDasharray={circ}
-        strokeDashoffset={offset}
+        stroke={allDone ? '#10b981' : '#14b8a6'}
+        strokeWidth="6" strokeLinecap="round"
+        strokeDasharray={circ} strokeDashoffset={offset}
         transform="rotate(-90 36 36)"
         className="transition-all duration-700"
       />
       <text x="36" y="40" textAnchor="middle" fontSize="14" fontWeight="700"
-        fill={allDone ? '#10b981' : '#1a2942'}>
+        fill={allDone ? '#10b981' : '#0d9488'}>
         {pct}%
       </text>
     </svg>
@@ -317,75 +241,63 @@ function UnitCard({
     <div className={cn(
       'group relative bg-white rounded-2xl border transition-all duration-200',
       dirty
-        ? 'border-amber-200 shadow-amber-50 shadow-md'
+        ? 'border-teal-200 shadow-sm shadow-teal-50'
         : isAssigned
-          ? 'border-emerald-100 shadow-sm hover:shadow-md hover:border-emerald-200'
+          ? 'border-teal-100 shadow-sm hover:shadow-md hover:border-teal-200'
           : 'border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200',
     )}>
-      {/* Left accent bar */}
+      {/* Teal left accent */}
       <div className={cn(
-        'absolute left-0 top-3 bottom-3 w-0.5 rounded-full transition-all duration-300',
-        isAssigned ? 'bg-emerald-400' : 'bg-gray-200 group-hover:bg-gray-300',
+        'absolute left-0 top-3 bottom-3 w-[3px] rounded-full transition-all duration-300',
+        isAssigned ? 'bg-teal-400' : 'bg-gray-100 group-hover:bg-teal-200',
       )} />
 
-      <div className="pl-5 pr-4 py-3.5">
-        {/* Top row: code + badges + assigned check */}
+      <div className="pl-5 pr-4 py-4">
+        {/* Top row */}
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-            <span className="font-mono text-xs font-bold text-gray-500 tracking-tight shrink-0">
-              {code}
-            </span>
+            <span className="font-mono text-[11px] font-bold text-gray-400 tracking-tight shrink-0">{code}</span>
             <TypeBadge type={type} />
-            <span className="text-[10px] text-gray-400 font-medium shrink-0">
-              {periodsPerWeek}×/wk
-            </span>
+            <span className="text-[10px] text-gray-400 font-medium shrink-0">{periodsPerWeek}×/wk</span>
             {isOutsourced && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 border border-orange-100 font-semibold shrink-0">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-50 text-gray-500 border border-gray-100 font-semibold shrink-0">
                 Outsourced
               </span>
             )}
             {dirty && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100 font-semibold shrink-0">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-50 text-teal-600 border border-teal-100 font-semibold shrink-0">
                 Unsaved
               </span>
             )}
             {qualifiedTrainers.length === 0 && (
-              <span className="text-[10px] text-amber-500 flex items-center gap-1 font-semibold shrink-0">
+              <span className="text-[10px] text-gray-400 flex items-center gap-1 font-medium shrink-0">
                 <AlertCircle className="h-2.5 w-2.5" /> No qualified
               </span>
             )}
           </div>
-          {isAssigned && (
-            <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-          )}
+          {isAssigned && <CheckCircle2 className="h-4 w-4 text-teal-500 shrink-0 mt-0.5" />}
         </div>
 
         {/* Unit name */}
-        <p className="text-sm font-semibold text-gray-800 leading-snug mb-2.5">
-          {name}
-        </p>
+        <p className="text-sm font-semibold text-gray-800 leading-snug mb-3">{name}</p>
 
-        {/* Cohort pills */}
+        {/* Cohort pills — neutral, not violet */}
         {cohorts && cohorts.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-2.5">
+          <div className="flex flex-wrap gap-1.5 mb-3">
             {cohorts.map(c => (
-              <span key={c.cohortId} className="text-[10px] px-2.5 py-1 rounded-full bg-violet-50 text-violet-700 border border-violet-100 font-semibold">
+              <span key={c.cohortId}
+                className="text-[10px] px-2.5 py-1 rounded-full bg-gray-50 text-gray-600 border border-gray-100 font-semibold">
                 {c.cohortName}
               </span>
             ))}
           </div>
         )}
 
-        {/* Trainer dropdown */}
         <TrainerDropdown
-          trainers={qualifiedTrainers}
-          allTrainers={allTrainers}
-          value={currentTrainerId}
-          saving={saving}
-          onChange={onAssign}
-          onClear={onClear}
-          isLocked={isLocked}
-          lockedReason={lockedReason}
+          trainers={qualifiedTrainers} allTrainers={allTrainers}
+          value={currentTrainerId} saving={saving}
+          onChange={onAssign} onClear={onClear}
+          isLocked={isLocked} lockedReason={lockedReason}
         />
       </div>
     </div>
@@ -396,25 +308,23 @@ function UnitCard({
 
 function SectionHeader({
   icon, title, subtitle, assigned, total,
-}: {
-  icon: React.ReactNode; title: string; subtitle: string; assigned: number; total: number
-}) {
+}: { icon: React.ReactNode; title: string; subtitle: string; assigned: number; total: number }) {
   const done = assigned === total
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
       <div className={cn(
         'flex h-8 w-8 items-center justify-center rounded-xl border shrink-0',
-        done ? 'bg-emerald-50 border-emerald-200' : 'bg-gray-50 border-gray-200',
+        done ? 'bg-teal-50 border-teal-200 text-teal-600' : 'bg-gray-50 border-gray-200 text-gray-500',
       )}>
-        <span className={done ? 'text-emerald-600' : 'text-gray-500'}>{icon}</span>
+        {icon}
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <h2 className="text-sm font-bold text-gray-900 truncate">{title}</h2>
         <p className="text-xs text-gray-400 truncate">{subtitle}</p>
       </div>
       <span className={cn(
-        'ml-auto text-xs font-bold tabular-nums px-3 py-1 rounded-full shrink-0',
-        done ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500',
+        'text-xs font-bold tabular-nums px-3 py-1 rounded-full shrink-0',
+        done ? 'bg-teal-50 text-teal-700' : 'bg-gray-100 text-gray-500',
       )}>
         {assigned}/{total}
       </span>
@@ -596,8 +506,8 @@ export default function UnitsOnOfferPage() {
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-      <div className="w-12 h-12 rounded-2xl bg-[#1a2942]/5 flex items-center justify-center">
-        <Loader2 className="h-5 w-5 text-[#1a2942] animate-spin" />
+      <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center">
+        <Loader2 className="h-5 w-5 text-teal-600 animate-spin" />
       </div>
       <p className="text-sm text-gray-400 font-medium">Loading units…</p>
     </div>
@@ -605,17 +515,15 @@ export default function UnitsOnOfferPage() {
 
   if (error) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-4">
-      <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center">
-        <AlertCircle className="h-6 w-6 text-rose-500" />
+      <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-center">
+        <AlertCircle className="h-6 w-6 text-gray-400" />
       </div>
       <div className="text-center">
         <p className="text-sm font-semibold text-gray-800 mb-1">Something went wrong</p>
         <p className="text-xs text-gray-400 max-w-xs">{error}</p>
       </div>
-      <button
-        onClick={load}
-        className="flex items-center gap-2 text-xs font-semibold text-gray-600 hover:text-gray-900 border border-gray-200 rounded-xl px-5 py-2.5 hover:bg-gray-50 transition-all"
-      >
+      <button onClick={load}
+        className="flex items-center gap-2 text-xs font-semibold text-teal-600 hover:text-teal-700 border border-teal-200 rounded-xl px-5 py-2.5 hover:bg-teal-50 transition-all">
         <RefreshCw className="h-3.5 w-3.5" /> Try again
       </button>
     </div>
@@ -624,35 +532,28 @@ export default function UnitsOnOfferPage() {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gray-50/60">
-      {/*
-        Layout strategy:
-        - Mobile (< sm):  single column, edge-to-edge px-4
-        - Tablet (sm–lg): single column, slightly more padding
-        - Desktop (lg+):  full width, 2-col unit grid
-        - Wide (xl+):     full width, 3-col unit grid, sidebar for progress
-      */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-5 sm:py-8">
+    <div className="min-h-screen bg-[#f8fafb]">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-6 sm:py-8">
 
         {/* ── Header ── */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-5 sm:mb-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-6 sm:mb-8">
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-gray-900">
-              Units on Offer
-            </h1>
-            <p className="mt-1 text-sm text-gray-500">
+            {/* Teal accent pip */}
+            <div className="flex items-center gap-3 mb-1">
+              <div className="h-5 w-[3px] rounded-full bg-teal-500 shrink-0" />
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900">Units on Offer</h1>
+            </div>
+            <p className="ml-[18px] text-sm text-gray-400">
               {activeTerm
-                ? <>Assign trainers for <span className="font-semibold text-gray-700">{activeTerm.name}</span></>
-                : "Assign trainers to each cohort's units"
+                ? <>Assign trainers for <span className="font-semibold text-gray-600">{activeTerm.name}</span></>
+                : "Assign trainers to each cohort's curriculum units"
               }
             </p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={load}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-gray-600 hover:text-gray-900 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all"
-            >
+            <button onClick={load}
+              className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-gray-500 hover:text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all">
               <RefreshCw className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Refresh</span>
             </button>
@@ -662,7 +563,7 @@ export default function UnitsOnOfferPage() {
               className={cn(
                 'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all',
                 hasDirty || assigned > 0
-                  ? 'bg-[#1a2942] text-white hover:bg-[#243652] active:scale-95'
+                  ? 'bg-teal-600 text-white hover:bg-teal-700 active:scale-95'
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed',
               )}
             >
@@ -673,28 +574,29 @@ export default function UnitsOnOfferPage() {
           </div>
         </div>
 
+        {/* Saved confirmation */}
         {savedAt && (
-          <div className="flex items-center gap-2 mb-4 text-xs font-medium text-emerald-600">
+          <div className="flex items-center gap-2 mb-5 text-xs font-medium text-teal-600">
             <CheckCircle2 className="h-3.5 w-3.5" />
             Saved at {savedAt.toLocaleTimeString()}
           </div>
         )}
 
-        {/* ── Main layout: xl+ gets a sidebar, otherwise stacked ── */}
-        <div className="xl:grid xl:grid-cols-[1fr_280px] xl:gap-6 xl:items-start">
+        {/* ── Main layout ── */}
+        <div className="xl:grid xl:grid-cols-[1fr_268px] xl:gap-6 xl:items-start">
 
           {/* ── Left / main content ── */}
           <div className="space-y-6 sm:space-y-8 min-w-0">
 
-            {/* Progress card — visible below xl (sidebar handles xl+) */}
+            {/* Progress card — mobile/tablet only */}
             <div className="xl:hidden bg-white rounded-2xl border border-gray-100 p-4 sm:p-5 shadow-sm">
               <div className="flex items-center gap-4">
                 <ProgressRing pct={pct} allDone={allDone} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 mb-2">Assignment progress</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Assignment Progress</p>
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
                     <div
-                      className={cn('h-full rounded-full transition-all duration-700', allDone ? 'bg-emerald-400' : 'bg-[#1a2942]')}
+                      className={cn('h-full rounded-full transition-all duration-700', allDone ? 'bg-teal-400' : 'bg-teal-500')}
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -705,11 +607,9 @@ export default function UnitsOnOfferPage() {
                 </div>
               </div>
               {allDone && (
-                <div className="mt-3 flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-2.5">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                  <p className="text-xs font-semibold text-emerald-700">
-                    All units assigned — ready to generate.
-                  </p>
+                <div className="mt-3 flex items-center gap-2 rounded-xl bg-teal-50 border border-teal-100 px-4 py-2.5">
+                  <CheckCircle2 className="h-4 w-4 text-teal-500 shrink-0" />
+                  <p className="text-xs font-semibold text-teal-700">All units assigned — ready to generate.</p>
                 </div>
               )}
             </div>
@@ -724,28 +624,15 @@ export default function UnitsOnOfferPage() {
                   assigned={combinedRows.filter(r => r.currentTrainerId).length}
                   total={combinedRows.length}
                 />
-                {/*
-                  Unit grid:
-                  - mobile: 1 col
-                  - md:     2 col
-                  - xl:     2 col (sidebar takes space)
-                  - 2xl:    3 col
-                */}
                 <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-2.5">
                   {combinedRows.map(row => (
                     <UnitCard
                       key={row.key}
-                      code={row.unitCode}
-                      name={row.unitName}
-                      type={row.unitType}
-                      periodsPerWeek={row.periodsPerWeek}
-                      isOutsourced={row.isOutsourced}
-                      dirty={row.dirty}
-                      qualifiedTrainers={row.qualifiedTrainers}
-                      currentTrainerId={row.currentTrainerId}
-                      saving={row.saving}
-                      cohorts={row.cohorts}
-                      allTrainers={allTrainers}
+                      code={row.unitCode} name={row.unitName} type={row.unitType}
+                      periodsPerWeek={row.periodsPerWeek} isOutsourced={row.isOutsourced}
+                      dirty={row.dirty} qualifiedTrainers={row.qualifiedTrainers}
+                      currentTrainerId={row.currentTrainerId} saving={row.saving}
+                      cohorts={row.cohorts} allTrainers={allTrainers}
                       onAssign={id => setCombinedTrainer(row.key, id)}
                       onClear={() => setCombinedTrainer(row.key, null)}
                     />
@@ -770,15 +657,10 @@ export default function UnitsOnOfferPage() {
                     {sec.units.map(unit => (
                       <UnitCard
                         key={unit.unitId}
-                        code={unit.unitCode}
-                        name={unit.unitName}
-                        type={unit.unitType}
-                        periodsPerWeek={unit.periodsPerWeek}
-                        isOutsourced={unit.isOutsourced}
-                        dirty={unit.dirty}
-                        qualifiedTrainers={unit.qualifiedTrainers}
-                        currentTrainerId={unit.currentTrainerId}
-                        saving={unit.saving}
+                        code={unit.unitCode} name={unit.unitName} type={unit.unitType}
+                        periodsPerWeek={unit.periodsPerWeek} isOutsourced={unit.isOutsourced}
+                        dirty={unit.dirty} qualifiedTrainers={unit.qualifiedTrainers}
+                        currentTrainerId={unit.currentTrainerId} saving={unit.saving}
                         allTrainers={allTrainers}
                         onAssign={id => setUnitTrainer(sec.cohortId, unit.unitId, id)}
                         onClear={() => setUnitTrainer(sec.cohortId, unit.unitId, null)}
@@ -792,8 +674,8 @@ export default function UnitsOnOfferPage() {
             {/* ── Empty state ── */}
             {total === 0 && (
               <div className="flex flex-col items-center justify-center py-20 gap-4 text-center px-4">
-                <div className="w-16 h-16 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center">
-                  <BookOpen className="h-7 w-7 text-gray-400" />
+                <div className="w-16 h-16 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center">
+                  <BookOpen className="h-7 w-7 text-teal-400" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-gray-700 mb-1">No units on offer</p>
@@ -801,32 +683,29 @@ export default function UnitsOnOfferPage() {
                     Make sure cohorts have a current term and curriculum units are defined.
                   </p>
                 </div>
-                <button
-                  onClick={load}
-                  className="flex items-center gap-2 text-xs font-semibold text-gray-600 border border-gray-200 rounded-xl px-5 py-2.5 hover:bg-gray-50 transition-all"
-                >
+                <button onClick={load}
+                  className="flex items-center gap-2 text-xs font-semibold text-teal-600 border border-teal-200 rounded-xl px-5 py-2.5 hover:bg-teal-50 transition-all">
                   <RefreshCw className="h-3.5 w-3.5" /> Reload
                 </button>
               </div>
             )}
 
-            {/* Bottom padding for sticky bar */}
             {hasDirty && <div className="h-16" />}
           </div>
 
-          {/* ── Right sidebar — xl+ only ── */}
+          {/* ── Sidebar — xl+ only ── */}
           <div className="hidden xl:block">
             <div className="sticky top-6 space-y-4">
 
               {/* Progress card */}
               <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Progress</p>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Progress</p>
                 <div className="flex flex-col items-center gap-4">
                   <ProgressRing pct={pct} allDone={allDone} />
                   <div className="w-full">
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
                       <div
-                        className={cn('h-full rounded-full transition-all duration-700', allDone ? 'bg-emerald-400' : 'bg-[#1a2942]')}
+                        className={cn('h-full rounded-full transition-all duration-700', allDone ? 'bg-teal-400' : 'bg-teal-500')}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -837,20 +716,18 @@ export default function UnitsOnOfferPage() {
                   </div>
                 </div>
                 {allDone && (
-                  <div className="mt-4 flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-100 px-3 py-2.5">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <p className="text-xs font-semibold text-emerald-700 leading-snug">
-                      All assigned — ready to generate.
-                    </p>
+                  <div className="mt-4 flex items-center gap-2 rounded-xl bg-teal-50 border border-teal-100 px-3 py-2.5">
+                    <CheckCircle2 className="h-4 w-4 text-teal-500 shrink-0" />
+                    <p className="text-xs font-semibold text-teal-700 leading-snug">All assigned — ready to generate.</p>
                   </div>
                 )}
               </div>
 
-              {/* Per-section progress breakdown */}
+              {/* Section breakdown */}
               {(combinedRows.length > 0 || cohortSections.length > 0) && (
                 <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Sections</p>
-                  <div className="space-y-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Sections</p>
+                  <div className="space-y-2.5">
                     {combinedRows.length > 0 && (
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
@@ -860,8 +737,7 @@ export default function UnitsOnOfferPage() {
                         <span className={cn(
                           'text-xs font-bold tabular-nums px-2 py-0.5 rounded-full shrink-0',
                           combinedRows.filter(r => r.currentTrainerId).length === combinedRows.length
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-gray-100 text-gray-500',
+                            ? 'bg-teal-50 text-teal-700' : 'bg-gray-100 text-gray-500',
                         )}>
                           {combinedRows.filter(r => r.currentTrainerId).length}/{combinedRows.length}
                         </span>
@@ -878,7 +754,7 @@ export default function UnitsOnOfferPage() {
                           </div>
                           <span className={cn(
                             'text-xs font-bold tabular-nums px-2 py-0.5 rounded-full shrink-0',
-                            done ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500',
+                            done ? 'bg-teal-50 text-teal-700' : 'bg-gray-100 text-gray-500',
                           )}>
                             {sa}/{sec.units.length}
                           </span>
@@ -889,14 +765,13 @@ export default function UnitsOnOfferPage() {
                 </div>
               )}
 
-              {/* Save button in sidebar */}
+              {/* Save button */}
               {(hasDirty || assigned > 0) && (
                 <button
-                  onClick={saveAll}
-                  disabled={globalSaving}
+                  onClick={saveAll} disabled={globalSaving}
                   className={cn(
                     'w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-all',
-                    'bg-[#1a2942] text-white hover:bg-[#243652] active:scale-[0.98]',
+                    'bg-teal-600 text-white hover:bg-teal-700 active:scale-[0.98]',
                     globalSaving && 'opacity-70 cursor-wait',
                   )}
                 >
@@ -908,28 +783,26 @@ export default function UnitsOnOfferPage() {
               )}
 
               {savedAt && (
-                <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-emerald-600">
+                <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-teal-600">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   Saved at {savedAt.toLocaleTimeString()}
                 </div>
               )}
             </div>
           </div>
-
         </div>
       </div>
 
-      {/* ── Sticky save bar — mobile/tablet only (below xl) ── */}
+      {/* ── Sticky save bar — mobile/tablet ── */}
       {hasDirty && (
         <div className="xl:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-4 px-4 pointer-events-none">
           <div className="pointer-events-auto w-full max-w-sm">
             <button
-              onClick={saveAll}
-              disabled={globalSaving}
+              onClick={saveAll} disabled={globalSaving}
               className={cn(
                 'w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl text-sm font-bold transition-all',
-                'bg-[#1a2942] text-white shadow-xl shadow-[#1a2942]/20',
-                'hover:bg-[#243652] active:scale-[0.98]',
+                'bg-teal-600 text-white shadow-xl shadow-teal-500/20',
+                'hover:bg-teal-700 active:scale-[0.98]',
                 globalSaving && 'opacity-70 cursor-wait',
               )}
             >

@@ -10,13 +10,13 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '@/store'
 import { cn } from '@/lib/utils'
-import { useEffect, useCallback, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 // ── Brand ─────────────────────────────────────────────────────────────────
 const BRAND       = '#0d9488'
 const BRAND_DARK  = '#0f766e'
 const BRAND_LIGHT = '#f0fdfa'
-const BRAND_MID   = '#99f6e4'
+const BRAND_MID   = '#5eead4'
 
 // ── Nav structure ─────────────────────────────────────────────────────────
 const NAV = [
@@ -56,7 +56,6 @@ const NAV = [
   },
 ]
 
-// Bottom nav — one entry per top-level section
 const BOTTOM_NAV = [
   { href: '/dashboard',         icon: LayoutDashboard, label: 'Dashboard', matchPrefix: '/dashboard' },
   { href: '/timetable',         icon: Calendar,        label: 'Timetable', matchPrefix: '/timetable' },
@@ -93,6 +92,70 @@ function Avatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' }) {
   )
 }
 
+// ── Nav Item ──────────────────────────────────────────────────────────────
+function NavItem({
+  href,
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  href: string
+  icon: React.ElementType
+  label: string
+  onClick?: () => void
+}) {
+  const pathname = usePathname()
+  const active = isActive(href, pathname)
+
+  return (
+    <li>
+      <Link
+        href={href}
+        onClick={onClick}
+        className={cn(
+          'group flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-150',
+          active
+            ? 'font-semibold shadow-sm'
+            : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800',
+        )}
+        style={
+          active
+            ? {
+                background: `linear-gradient(135deg, ${BRAND_LIGHT}, #ccfbf1)`,
+                color: BRAND_DARK,
+                boxShadow: `inset 0 0 0 1px ${BRAND_MID}40`,
+              }
+            : {}
+        }
+      >
+        {/* Icon with tinted bg when active */}
+        <span
+          className={cn(
+            'flex h-6 w-6 shrink-0 items-center justify-center rounded-lg transition-all duration-150',
+            active ? '' : 'group-hover:bg-gray-100',
+          )}
+          style={active ? { background: `${BRAND}18` } : {}}
+        >
+          <Icon
+            className="h-3.5 w-3.5"
+            style={{ color: active ? BRAND : undefined }}
+            strokeWidth={active ? 2.5 : 2}
+          />
+        </span>
+
+        <span className="flex-1 truncate">{label}</span>
+
+        {active && (
+          <ChevronRight
+            className="h-3 w-3 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5"
+            style={{ color: BRAND_MID }}
+          />
+        )}
+      </Link>
+    </li>
+  )
+}
+
 // ── Desktop Sidebar ───────────────────────────────────────────────────────
 function DesktopSidebar() {
   const pathname = usePathname()
@@ -110,12 +173,14 @@ function DesktopSidebar() {
   }, [pathname])
 
   return (
-    <aside className="flex h-full w-60 flex-col bg-white border-r border-gray-100 shadow-sm">
+    <aside className="flex h-full w-60 flex-col bg-white border-r border-gray-100/80">
+      {/* Subtle inner shadow on right edge */}
+      <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-gray-200/60 to-transparent pointer-events-none" />
 
       {/* Logo */}
       <div className="flex h-16 items-center gap-2.5 border-b border-gray-100 px-5 shrink-0">
         <div
-          className="flex h-8 w-8 items-center justify-center rounded-xl shrink-0"
+          className="flex h-8 w-8 items-center justify-center rounded-xl shrink-0 shadow-sm"
           style={{ background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})` }}
         >
           <Calendar className="h-4 w-4 text-white" />
@@ -128,60 +193,67 @@ function DesktopSidebar() {
         </span>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5 scrollbar-none">
+      {/* Nav — scrollable with custom scrollbar */}
+      <nav
+        className="flex-1 overflow-y-auto px-3 py-4 space-y-5"
+        style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: `${BRAND_MID} transparent`,
+        }}
+      >
+        <style>{`
+          .sidebar-nav::-webkit-scrollbar {
+            width: 4px;
+          }
+          .sidebar-nav::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          .sidebar-nav::-webkit-scrollbar-thumb {
+            background: ${BRAND_MID};
+            border-radius: 99px;
+          }
+          .sidebar-nav::-webkit-scrollbar-thumb:hover {
+            background: ${BRAND};
+          }
+        `}</style>
+
         {NAV.map(section => (
           <div key={section.label} id={section.id}>
-            <p className="mb-1.5 px-2.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-              {section.label}
-            </p>
+            {/* Section label with subtle line */}
+            <div className="mb-2 flex items-center gap-2 px-2.5">
+              <p className="text-[9.5px] font-bold uppercase tracking-[0.12em] text-gray-400">
+                {section.label}
+              </p>
+              <div className="h-px flex-1 bg-gray-100" />
+            </div>
+
             <ul className="space-y-0.5">
-              {section.items.map(({ href, icon: Icon, label }) => {
-                const active = isActive(href, pathname)
-                return (
-                  <li key={href}>
-                    <Link
-                      href={href}
-                      className={cn(
-                        'group flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-150',
-                        active
-                          ? 'font-semibold'
-                          : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800',
-                      )}
-                      style={active ? { background: BRAND_LIGHT, color: BRAND_DARK } : {}}
-                    >
-                      <Icon
-                        className="h-4 w-4 shrink-0"
-                        style={{ color: active ? BRAND : undefined }}
-                      />
-                      <span className="flex-1 truncate">{label}</span>
-                      {active && (
-                        <ChevronRight className="h-3 w-3 shrink-0" style={{ color: BRAND_MID }} />
-                      )}
-                    </Link>
-                  </li>
-                )
-              })}
+              {section.items.map(({ href, icon, label }) => (
+                <NavItem key={href} href={href} icon={icon} label={label} />
+              ))}
             </ul>
           </div>
         ))}
+
+        {/* Bottom breathing room */}
+        <div className="h-2" />
       </nav>
 
       {/* User footer */}
-      <div className="border-t border-gray-100 bg-gray-50/60 px-4 py-3 shrink-0">
+      <div className="border-t border-gray-100 px-4 py-3 shrink-0 bg-gray-50/40">
         <div className="flex items-center gap-3">
           <Avatar name={user?.username ?? 'U'} />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-gray-800 leading-tight">
               {user?.username ?? '—'}
             </p>
-            <p className="text-[11px] text-gray-400 mt-0.5">
+            <p className="text-[10px] text-gray-400 mt-0.5 font-medium">
               {user?.role === 'ADMIN' ? 'Administrator' : 'Trainer'}
             </p>
           </div>
           <button
             onClick={logout}
-            className="rounded-xl p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+            className="rounded-xl p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all duration-150"
             title="Logout"
           >
             <LogOut className="h-4 w-4" />
@@ -201,9 +273,9 @@ function MobileTopBar({ onOpenDrawer }: { onOpenDrawer: () => void }) {
   const currentSection = getActiveSection(pathname)
 
   return (
-    <header className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-white border-b border-gray-100 flex items-center px-4 gap-3 shadow-sm">
+    <header className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-white/95 backdrop-blur-md border-b border-gray-100 flex items-center px-4 gap-3">
       <div
-        className="flex h-7 w-7 items-center justify-center rounded-lg shrink-0"
+        className="flex h-7 w-7 items-center justify-center rounded-lg shrink-0 shadow-sm"
         style={{ background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})` }}
       >
         <Calendar className="h-3.5 w-3.5 text-white" />
@@ -211,7 +283,10 @@ function MobileTopBar({ onOpenDrawer }: { onOpenDrawer: () => void }) {
 
       <div className="flex-1 min-w-0">
         {currentSection && (
-          <p className="text-[10px] font-bold uppercase tracking-widest leading-none mb-0.5" style={{ color: BRAND }}>
+          <p
+            className="text-[9px] font-bold uppercase tracking-widest leading-none mb-0.5"
+            style={{ color: BRAND }}
+          >
             {currentSection.label}
           </p>
         )}
@@ -239,7 +314,7 @@ function MobileBottomNav() {
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-100"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="flex items-stretch h-16">
@@ -250,15 +325,22 @@ function MobileBottomNav() {
               key={href}
               href={href}
               className={cn(
-                'flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-semibold transition-colors pt-1',
-                active ? 'text-[#0f766e]' : 'text-gray-400',
+                'flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-semibold transition-all duration-150 pt-1',
+                active ? '' : 'text-gray-400',
               )}
+              style={active ? { color: BRAND_DARK } : {}}
             >
-              <div className={cn(
-                'flex items-center justify-center w-10 h-6 rounded-full transition-all',
-                active ? 'bg-teal-50' : '',
-              )}>
-                <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 1.75} />
+              <div
+                className={cn(
+                  'flex items-center justify-center w-10 h-6 rounded-full transition-all duration-150',
+                )}
+                style={active ? { background: `${BRAND}15` } : {}}
+              >
+                <Icon
+                  className="h-5 w-5 transition-all duration-150"
+                  strokeWidth={active ? 2.5 : 1.75}
+                  style={{ color: active ? BRAND : undefined }}
+                />
               </div>
               {label}
             </Link>
@@ -269,7 +351,7 @@ function MobileBottomNav() {
   )
 }
 
-// ── Mobile Drawer (slides up from bottom) ─────────────────────────────────
+// ── Mobile Drawer ─────────────────────────────────────────────────────────
 function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname()
   const { user, logout } = useAuthStore()
@@ -298,7 +380,7 @@ function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void })
         <div className="flex items-center justify-between px-5 pt-2 pb-3 border-b border-gray-100 shrink-0">
           <div className="flex items-center gap-2.5">
             <div
-              className="flex h-7 w-7 items-center justify-center rounded-lg shrink-0"
+              className="flex h-7 w-7 items-center justify-center rounded-lg shrink-0 shadow-sm"
               style={{ background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})` }}
             >
               <Calendar className="h-3.5 w-3.5 text-white" />
@@ -317,38 +399,22 @@ function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void })
         </div>
 
         {/* Nav — scrollable */}
-        <nav className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+        <nav
+          className="flex-1 overflow-y-auto px-4 py-3 space-y-4"
+          style={{ scrollbarWidth: 'thin', scrollbarColor: `${BRAND_MID} transparent` }}
+        >
           {NAV.map(section => (
             <div key={section.label} id={`mobile-${section.id}`}>
-              <p className="mb-1.5 px-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                {section.label}
-              </p>
+              <div className="mb-1.5 flex items-center gap-2 px-1">
+                <p className="text-[9.5px] font-bold uppercase tracking-[0.12em] text-gray-400">
+                  {section.label}
+                </p>
+                <div className="h-px flex-1 bg-gray-100" />
+              </div>
               <ul className="space-y-0.5">
-                {section.items.map(({ href, icon: Icon, label }) => {
-                  const active = isActive(href, pathname)
-                  return (
-                    <li key={href}>
-                      <Link
-                        href={href}
-                        onClick={onClose}
-                        className={cn(
-                          'flex items-center gap-3 rounded-xl px-3 py-3 text-sm transition-all',
-                          active ? 'font-semibold' : 'text-gray-500',
-                        )}
-                        style={active ? { background: BRAND_LIGHT, color: BRAND_DARK } : {}}
-                      >
-                        <Icon
-                          className="h-4 w-4 shrink-0"
-                          style={{ color: active ? BRAND : undefined }}
-                        />
-                        <span className="flex-1">{label}</span>
-                        {active && (
-                          <ChevronRight className="h-3.5 w-3.5 shrink-0" style={{ color: BRAND_MID }} />
-                        )}
-                      </Link>
-                    </li>
-                  )
-                })}
+                {section.items.map(({ href, icon, label }) => (
+                  <NavItem key={href} href={href} icon={icon} label={label} onClick={onClose} />
+                ))}
               </ul>
             </div>
           ))}
@@ -356,20 +422,22 @@ function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void })
 
         {/* User footer */}
         <div
-          className="border-t border-gray-100 bg-gray-50/60 px-5 py-3 shrink-0"
+          className="border-t border-gray-100 bg-gray-50/40 px-5 py-3 shrink-0"
           style={{ paddingBottom: `calc(0.75rem + env(safe-area-inset-bottom))` }}
         >
           <div className="flex items-center gap-3">
             <Avatar name={user?.username ?? 'U'} />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-gray-800">{user?.username ?? '—'}</p>
-              <p className="text-[11px] text-gray-400">
+              <p className="truncate text-sm font-semibold text-gray-800 leading-tight">
+                {user?.username ?? '—'}
+              </p>
+              <p className="text-[10px] text-gray-400 mt-0.5 font-medium">
                 {user?.role === 'ADMIN' ? 'Administrator' : 'Trainer'}
               </p>
             </div>
             <button
               onClick={logout}
-              className="rounded-xl p-1.5 text-gray-400 hover:bg-gray-100 transition-colors"
+              className="rounded-xl p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all duration-150"
               title="Logout"
             >
               <LogOut className="h-4 w-4" />

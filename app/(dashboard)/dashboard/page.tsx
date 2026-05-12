@@ -6,7 +6,7 @@ import {
   Play, CheckCircle, Trash2, AlertTriangle, Loader2,
   Calendar, ChevronRight, BookOpen, Users, DoorOpen,
   TrendingUp, Clock, ShieldCheck, LayoutGrid, GraduationCap,
-  Layers,
+  Layers, ArrowUpRight, Zap,
 } from 'lucide-react'
 import { useDashboard } from '@/hooks/useTimetable'
 import { useTermStore } from '@/store'
@@ -16,164 +16,84 @@ import HeroCard from '@/components/features/dashboard/HeroCard'
 
 type Action = 'generate' | 'publish' | 'clear' | null
 
-const GREEN   = '#0d9488'
-const GREEN_L = '#f0fdfa'
-
-// ── Quick action ──────────────────────────────────────────────────────────────
-function QuickAction({
-  icon: Icon,
-  label,
-  bg,
-  color,
-  onClick,
-  loading,
-}: {
-  icon: React.ElementType
-  label: string
-  bg: string
-  color: string
-  onClick: () => void
-  loading?: boolean
-}) {
-  return (
-    <button onClick={onClick} disabled={loading} className="flex flex-col items-center gap-2 group">
-      <div
-        className="w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-active:scale-95"
-        style={{ background: bg }}
-      >
-        {loading ? (
-          <Loader2 className="w-5 h-5 animate-spin" style={{ color }} />
-        ) : (
-          <Icon className="w-5 h-5" style={{ color }} />
-        )}
-      </div>
-      <p className="text-[11px] font-semibold text-gray-500 text-center leading-tight">{label}</p>
-    </button>
-  )
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const T = {
+  teal:       '#0d9488',
+  tealDark:   '#0f766e',
+  tealDeep:   '#134e4a',
+  tealLight:  '#f0fdfa',
+  tealMid:    '#ccfbf1',
+  tealGlass:  'rgba(13,148,136,0.08)',
+  tealBorder: 'rgba(13,148,136,0.18)',
 }
 
-// ── Stat tile ─────────────────────────────────────────────────────────────────
-function StatTile({
+// ── Setup links ───────────────────────────────────────────────────────────────
+const SETUP_LINKS = [
+  { href: '/setup/terms',       icon: Calendar,      label: 'Terms'       },
+  { href: '/setup/cohorts',     icon: GraduationCap, label: 'Cohorts'     },
+  { href: '/setup/trainers',    icon: Users,         label: 'Trainers'    },
+  { href: '/setup/rooms',       icon: DoorOpen,      label: 'Rooms'       },
+  { href: '/setup/curriculum',  icon: BookOpen,      label: 'Curriculum'  },
+  { href: '/setup/periods',     icon: Clock,         label: 'Periods'     },
+  { href: '/setup/departments', icon: LayoutGrid,    label: 'Departments' },
+  { href: '/setup/programmes',  icon: TrendingUp,    label: 'Programmes'  },
+]
+
+// ── Stat card ─────────────────────────────────────────────────────────────────
+function StatCard({
   icon: Icon,
   label,
   value,
-  bg,
-  color,
+  accent,
 }: {
   icon: React.ElementType
   label: string
   value: number
-  bg: string
-  color: string
+  accent: string
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col gap-3">
+    <div
+      className="relative overflow-hidden rounded-2xl border bg-white p-5 flex flex-col gap-4 group hover:shadow-md transition-all duration-300"
+      style={{ borderColor: 'rgba(0,0,0,0.06)' }}
+    >
+      {/* Accent bar top */}
       <div
-        className="w-9 h-9 rounded-xl flex items-center justify-center"
-        style={{ background: bg }}
+        className="absolute inset-x-0 top-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        style={{ background: accent }}
+      />
+      <div
+        className="w-10 h-10 rounded-xl flex items-center justify-center"
+        style={{ background: `${accent}15` }}
       >
-        <Icon className="w-4 h-4" style={{ color }} />
+        <Icon className="w-[18px] h-[18px]" style={{ color: accent }} />
       </div>
       <div>
-        <p className="text-2xl font-bold text-gray-900 leading-none">{value}</p>
-        <p className="text-[11px] text-gray-400 mt-1 font-semibold uppercase tracking-wide">
-          {label}
-        </p>
+        <p className="text-2xl sm:text-3xl font-bold text-gray-900 tabular-nums leading-none">{value}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mt-1.5">{label}</p>
       </div>
     </div>
   )
 }
 
-// ── Progress row ──────────────────────────────────────────────────────────────
-function ProgressRow({
-  label,
-  value,
-  total,
-  color,
-}: {
-  label: string
-  value: number
-  total: number
-  color: string
-}) {
+// ── Progress bar ──────────────────────────────────────────────────────────────
+function ProgressBar({ label, value, total, color }: { label: string; value: number; total: number; color: string }) {
   const pct = total > 0 ? Math.round((value / total) * 100) : 0
   return (
-    <div>
-      <div className="flex justify-between text-xs mb-1.5">
-        <span className="text-gray-400 font-semibold">{label}</span>
-        <span className="font-bold text-gray-700">
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{label}</span>
+        <span className="text-xs font-bold text-gray-700 tabular-nums">
           {value} <span className="text-gray-400 font-normal">/ {total}</span>
+          <span className="ml-1.5 text-[10px] font-semibold" style={{ color }}>{pct}%</span>
         </span>
       </div>
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-700"
           style={{ width: `${pct}%`, background: color }}
         />
       </div>
     </div>
-  )
-}
-
-// ── Nav row ───────────────────────────────────────────────────────────────────
-function NavRow({
-  icon: Icon,
-  label,
-  sub,
-  bg,
-  color,
-  onClick,
-}: {
-  icon: React.ElementType
-  label: string
-  sub: string
-  bg: string
-  color: string
-  onClick: () => void
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex items-center gap-3 w-full px-1 py-3 rounded-xl hover:bg-gray-50 transition-colors group"
-    >
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-        style={{ background: bg }}
-      >
-        <Icon className="w-[18px] h-[18px]" style={{ color }} />
-      </div>
-      <div className="flex-1 min-w-0 text-left">
-        <p className="text-sm font-bold text-gray-800 leading-tight">{label}</p>
-        <p className="text-[11px] text-gray-400 mt-0.5">{sub}</p>
-      </div>
-      <ChevronRight className="w-4 h-4 text-gray-300 shrink-0 group-hover:text-gray-400 transition-colors" />
-    </button>
-  )
-}
-
-// ── Setup button ──────────────────────────────────────────────────────────────
-function SetupBtn({
-  icon: Icon,
-  label,
-  onClick,
-}: {
-  icon: React.ElementType
-  label: string
-  onClick: () => void
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-gray-100 bg-white hover:border-green-200 hover:bg-green-50/50 transition-all group"
-    >
-      <div
-        className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors group-hover:bg-green-100"
-        style={{ background: GREEN_L }}
-      >
-        <Icon className="w-4 h-4" style={{ color: GREEN }} />
-      </div>
-      <p className="text-[10px] font-semibold text-gray-500 text-center leading-tight">{label}</p>
-    </button>
   )
 }
 
@@ -195,292 +115,122 @@ function ActionBtn({
   disabled?: boolean
   variant: 'primary' | 'success' | 'danger' | 'warning'
 }) {
-  const map = {
-    primary: { bg: GREEN,     text: '#fff',    iconBg: 'rgba(255,255,255,0.18)', border: GREEN     },
-    success: { bg: '#059669', text: '#fff',    iconBg: 'rgba(255,255,255,0.18)', border: '#059669' },
-    danger:  { bg: '#fef2f2', text: '#991b1b', iconBg: '#fee2e2',                border: '#fecaca' },
-    warning: { bg: '#fffbeb', text: '#92400e', iconBg: '#fef3c7',                border: '#fde68a' },
+  const styles = {
+    primary: {
+      wrap:  'bg-teal-600 hover:bg-teal-700 border-teal-600',
+      text:  'text-white',
+      sub:   'text-teal-100',
+      icon:  'bg-white/15',
+      iconC: '#fff',
+    },
+    success: {
+      wrap:  'bg-emerald-600 hover:bg-emerald-700 border-emerald-600',
+      text:  'text-white',
+      sub:   'text-emerald-100',
+      icon:  'bg-white/15',
+      iconC: '#fff',
+    },
+    danger: {
+      wrap:  'bg-white hover:bg-red-50 border-red-100',
+      text:  'text-red-700',
+      sub:   'text-red-400',
+      icon:  'bg-red-50',
+      iconC: '#b91c1c',
+    },
+    warning: {
+      wrap:  'bg-white hover:bg-amber-50 border-amber-100',
+      text:  'text-amber-800',
+      sub:   'text-amber-500',
+      icon:  'bg-amber-50',
+      iconC: '#d97706',
+    },
   }
-  const s = map[variant]
+  const s = styles[variant]
+
   return (
     <button
       onClick={onClick}
       disabled={disabled || loading}
-      className="flex items-center gap-3 w-full rounded-2xl px-4 py-3.5 transition-all text-left disabled:opacity-40 min-h-[64px] active:scale-[0.98]"
-      style={{ background: s.bg, border: `1px solid ${s.border}` }}
+      className={`flex items-center gap-3.5 w-full rounded-xl px-4 py-3.5 border text-left disabled:opacity-40 active:scale-[0.98] transition-all duration-150 ${s.wrap}`}
     >
-      <div
-        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-        style={{ background: s.iconBg }}
-      >
-        {loading ? (
-          <Loader2 className="w-4 h-4 animate-spin" style={{ color: s.text }} />
-        ) : (
-          <Icon className="w-4 h-4" style={{ color: s.text }} />
-        )}
+      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${s.icon}`}>
+        {loading
+          ? <Loader2 className="w-4 h-4 animate-spin" style={{ color: s.iconC }} />
+          : <Icon className="w-4 h-4" style={{ color: s.iconC }} />}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold leading-tight" style={{ color: s.text }}>
-          {label}
-        </p>
-        <p
-          className="text-[11px] mt-0.5 leading-tight"
-          style={{ color: s.text, opacity: 0.65 }}
-        >
-          {description}
-        </p>
+        <p className={`text-sm font-bold leading-tight ${s.text}`}>{label}</p>
+        <p className={`text-[11px] mt-0.5 leading-snug ${s.sub}`}>{description}</p>
       </div>
-      <ChevronRight className="w-4 h-4 shrink-0" style={{ color: s.text, opacity: 0.4 }} />
+      <ChevronRight className={`w-4 h-4 shrink-0 opacity-50 ${s.text}`} />
+    </button>
+  )
+}
+
+// ── Nav row ───────────────────────────────────────────────────────────────────
+function NavRow({
+  icon: Icon,
+  label,
+  sub,
+  iconBg,
+  iconColor,
+  onClick,
+}: {
+  icon: React.ElementType
+  label: string
+  sub: string
+  iconBg: string
+  iconColor: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="group flex items-center gap-3.5 w-full px-4 py-3.5 rounded-xl hover:bg-teal-50/50 transition-all duration-150"
+    >
+      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: iconBg }}>
+        <Icon className="w-[17px] h-[17px]" style={{ color: iconColor }} />
+      </div>
+      <div className="flex-1 min-w-0 text-left">
+        <p className="text-sm font-bold text-gray-800 leading-tight">{label}</p>
+        <p className="text-[11px] text-gray-400 mt-0.5">{sub}</p>
+      </div>
+      <ArrowUpRight className="w-3.5 h-3.5 text-gray-300 shrink-0 group-hover:text-teal-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-150" />
+    </button>
+  )
+}
+
+// ── Setup grid button ─────────────────────────────────────────────────────────
+function SetupBtn({ icon: Icon, label, onClick }: { icon: React.ElementType; label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="group flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 bg-white hover:border-teal-200 hover:bg-teal-50/40 transition-all duration-200"
+    >
+      <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: T.tealLight }}>
+        <Icon className="w-4 h-4 group-hover:scale-110 transition-transform duration-150" style={{ color: T.teal }} />
+      </div>
+      <p className="text-[10px] font-semibold text-gray-500 text-center leading-tight tracking-wide">{label}</p>
     </button>
   )
 }
 
 // ── Section heading ───────────────────────────────────────────────────────────
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function SectionHeading({ title }: { title: string }) {
   return (
-    <div>
-      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3 px-0.5">
-        {title}
-      </p>
+    <div className="flex items-center gap-2.5 mb-3">
+      <div className="w-0.5 h-4 rounded-full" style={{ background: T.teal }} />
+      <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">{title}</p>
+    </div>
+  )
+}
+
+// ── Card wrapper ──────────────────────────────────────────────────────────────
+function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`bg-white rounded-2xl border border-gray-100/80 shadow-sm ${className}`}>
       {children}
     </div>
-  )
-}
-
-// ── Setup links ───────────────────────────────────────────────────────────────
-const SETUP_LINKS = [
-  { href: '/setup/terms',       icon: Calendar,      label: 'Terms'       },
-  { href: '/setup/cohorts',     icon: GraduationCap, label: 'Cohorts'     },
-  { href: '/setup/trainers',    icon: Users,         label: 'Trainers'    },
-  { href: '/setup/rooms',       icon: DoorOpen,      label: 'Rooms'       },
-  { href: '/setup/curriculum',  icon: BookOpen,      label: 'Curriculum'  },
-  { href: '/setup/periods',     icon: Clock,         label: 'Periods'     },
-  { href: '/setup/departments', icon: LayoutGrid,    label: 'Departments' },
-  { href: '/setup/programmes',  icon: TrendingUp,    label: 'Programmes'  },
-]
-
-// ── Sub-sections ──────────────────────────────────────────────────────────────
-
-function MobileQuickActions({
-  busy,
-  hasConflicts,
-  router,
-  onGenerate,
-  onPublish,
-  onClear,
-}: {
-  busy: Action
-  hasConflicts: boolean
-  router: ReturnType<typeof useRouter>
-  onGenerate: () => void
-  onPublish: (force?: boolean) => void
-  onClear: () => void
-}) {
-  return (
-    <Section title="Quick actions">
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
-        <div className="grid grid-cols-4 gap-2">
-          <QuickAction
-            icon={Play}
-            label="Generate"
-            bg="#e8f4ee"
-            color={GREEN}
-            onClick={onGenerate}
-            loading={busy === 'generate'}
-          />
-          <QuickAction
-            icon={CheckCircle}
-            label="Publish"
-            bg="#eff6ff"
-            color="#1d4ed8"
-            onClick={onPublish}
-            loading={busy === 'publish'}
-          />
-          <QuickAction
-            icon={AlertTriangle}
-            label="Conflicts"
-            bg="#fffbeb"
-            color="#d97706"
-            onClick={() => router.push('/conflicts')}
-          />
-          <QuickAction
-            icon={Trash2}
-            label="Clear"
-            bg="#fef2f2"
-            color="#b91c1c"
-            onClick={onClear}
-            loading={busy === 'clear'}
-          />
-        </div>
-      </div>
-    </Section>
-  )
-}
-
-function DesktopActionCard({
-  busy,
-  hasConflicts,
-  pendingConflicts,
-  draftUnits,
-  canPublish,
-  router,
-  onGenerate,
-  onPublish,
-  onClear,
-}: {
-  busy: Action
-  hasConflicts: boolean
-  pendingConflicts: number
-  draftUnits: number
-  canPublish: boolean
-  router: ReturnType<typeof useRouter>
-  onGenerate: () => void
-  onPublish: (force?: boolean) => void
-  onClear: () => void
-}) {
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
-      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">Actions</p>
-      <ActionBtn
-        icon={Play}
-        label="Generate Timetable"
-        description="Auto-schedule all units for this term"
-        onClick={onGenerate}
-        loading={busy === 'generate'}
-        disabled={!!busy}
-        variant="primary"
-      />
-      <ActionBtn
-        icon={CheckCircle}
-        label="Publish Drafts"
-        description={
-          canPublish
-            ? `${draftUnits} draft${draftUnits > 1 ? 's' : ''} ready to publish`
-            : hasConflicts
-            ? 'Resolve conflicts before publishing'
-            : 'No drafts to publish'
-        }
-        onClick={() => onPublish()}
-        loading={busy === 'publish'}
-        disabled={!!busy || !canPublish}
-        variant="success"
-      />
-      {hasConflicts && (
-        <ActionBtn
-          icon={AlertTriangle}
-          label="Resolve Conflicts"
-          description={`${pendingConflicts} scheduling conflict${pendingConflicts > 1 ? 's' : ''} pending`}
-          onClick={() => router.push('/conflicts')}
-          variant="warning"
-        />
-      )}
-      {draftUnits > 0 && (
-        <ActionBtn
-          icon={Trash2}
-          label="Clear Drafts"
-          description="Permanently delete all draft entries"
-          onClick={onClear}
-          loading={busy === 'clear'}
-          disabled={!!busy}
-          variant="danger"
-        />
-      )}
-    </div>
-  )
-}
-
-function StatusSection({
-  publishedUnits,
-  draftUnits,
-  scheduledUnits,
-  hasConflicts,
-  pendingConflicts,
-  router,
-}: {
-  publishedUnits: number
-  draftUnits: number
-  scheduledUnits: number
-  hasConflicts: boolean
-  pendingConflicts: number
-  router: ReturnType<typeof useRouter>
-}) {
-  return (
-    <Section title="Timetable status">
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 space-y-4">
-        <ProgressRow label="Published" value={publishedUnits} total={scheduledUnits} color={GREEN}   />
-        <ProgressRow label="Drafts"    value={draftUnits}     total={scheduledUnits} color="#d97706" />
-        {hasConflicts ? (
-          <button
-            onClick={() => router.push('/conflicts')}
-            className="flex items-center gap-3 w-full bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-left hover:bg-red-100 transition-colors"
-          >
-            <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
-            <p className="text-xs font-bold text-red-700 flex-1">
-              {pendingConflicts} conflict{pendingConflicts > 1 ? 's' : ''} need resolution
-            </p>
-            <ChevronRight className="w-4 h-4 text-red-300 shrink-0" />
-          </button>
-        ) : scheduledUnits > 0 ? (
-          <div className="flex items-center gap-3 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
-            <ShieldCheck className="w-4 h-4 text-green-600 shrink-0" />
-            <p className="text-xs font-bold text-green-700">No conflicts — ready to publish</p>
-          </div>
-        ) : null}
-      </div>
-    </Section>
-  )
-}
-
-function QuickAccessSection({ router }: { router: ReturnType<typeof useRouter> }) {
-  return (
-    <Section title="Quick access">
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-1 divide-y divide-gray-50">
-        <NavRow
-          icon={LayoutGrid}
-          label="Master Timetable"
-          sub="Full schedule view"
-          bg="#e8f4ee"
-          color={GREEN}
-          onClick={() => router.push('/timetable')}
-        />
-        <NavRow
-          icon={GraduationCap}
-          label="By Cohort"
-          sub="Per-cohort view"
-          bg="#eff6ff"
-          color="#1d4ed8"
-          onClick={() => router.push('/timetable/cohorts')}
-        />
-        <NavRow
-          icon={Users}
-          label="By Trainer"
-          sub="Per-trainer schedule"
-          bg="#f5f3ff"
-          color="#7c3aed"
-          onClick={() => router.push('/timetable/trainers')}
-        />
-        <NavRow
-          icon={ShieldCheck}
-          label="Constraints"
-          sub="Scheduling rules"
-          bg="#fef2f2"
-          color="#b91c1c"
-          onClick={() => router.push('/constraints')}
-        />
-      </div>
-    </Section>
-  )
-}
-
-function SetupSection({ router }: { router: ReturnType<typeof useRouter> }) {
-  return (
-    <Section title="Setup">
-      <div className="grid grid-cols-4 gap-2.5">
-        {SETUP_LINKS.map(({ href, icon, label }) => (
-          <SetupBtn key={href} icon={icon} label={label} onClick={() => router.push(href)} />
-        ))}
-      </div>
-    </Section>
   )
 }
 
@@ -490,8 +240,6 @@ export default function DashboardPage() {
   const { activeTerm } = useTermStore()
   const { data, isLoading, isError, refetch } = useDashboard()
   const [busy, setBusy] = useState<Action>(null)
-
-  // ── Handlers ────────────────────────────────────────────────────────────────
 
   async function handleGenerate() {
     if (!activeTerm?.id) { toast.error('No active term'); return }
@@ -544,17 +292,11 @@ export default function DashboardPage() {
   // ── Loading ────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="dashboard-page">
-        <div className="h-56 animate-pulse lg:rounded-2xl" style={{ background: GREEN }} />
-        <div className="px-4 pt-5 space-y-4 max-w-screen-xl mx-auto lg:px-0">
-          {[120, 80, 200, 160].map((h, i) => (
-            <div
-              key={i}
-              className="rounded-2xl bg-white animate-pulse border border-gray-100"
-              style={{ height: h }}
-            />
-          ))}
-        </div>
+      <div className="min-h-screen bg-gray-50/60 p-4 lg:p-8 space-y-4">
+        <div className="h-52 rounded-2xl animate-pulse" style={{ background: T.teal }} />
+        {[100, 80, 200].map((h, i) => (
+          <div key={i} className="rounded-2xl bg-white animate-pulse border border-gray-100" style={{ height: h }} />
+        ))}
       </div>
     )
   }
@@ -562,16 +304,18 @@ export default function DashboardPage() {
   // ── Error ──────────────────────────────────────────────────────────────────
   if (isError || !data) {
     return (
-      <div className="dashboard-page min-h-[60vh] flex flex-col items-center justify-center px-6 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mb-4">
-          <AlertTriangle className="w-7 h-7 text-red-400" />
+      <div className="min-h-[60vh] flex flex-col items-center justify-center px-6 text-center gap-4">
+        <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center">
+          <AlertTriangle className="w-6 h-6 text-red-400" />
         </div>
-        <p className="text-base font-bold text-gray-800">Failed to load dashboard</p>
-        <p className="text-sm text-gray-400 mt-1 mb-5">Check your connection and try again</p>
+        <div>
+          <p className="text-base font-bold text-gray-800">Failed to load dashboard</p>
+          <p className="text-sm text-gray-400 mt-1">Check your connection and try again</p>
+        </div>
         <button
           onClick={() => refetch()}
-          className="px-6 py-2.5 rounded-xl text-sm font-bold text-white hover:opacity-90 transition-opacity"
-          style={{ background: GREEN }}
+          className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90"
+          style={{ background: T.teal }}
         >
           Retry
         </button>
@@ -588,116 +332,182 @@ export default function DashboardPage() {
   const canPublish       = draftUnits > 0 && !hasConflicts
 
   return (
-    <div className="dashboard-page">
-      <div className="lg:max-w-screen-xl lg:mx-auto lg:px-0">
+    <div className="min-h-screen bg-[#f8fafb]">
+      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 space-y-6 lg:space-y-8">
 
-        {/* On lg+: hero left, actions right (2-col) */}
-        <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-6 lg:items-start">
+        {/* ── Hero card ── */}
+        <HeroCard
+          term={term}
+          drafts={draftUnits}
+          published={publishedUnits}
+          scheduled={scheduledUnits}
+        />
 
-          {/* Left: hero card */}
-          <div>
-            <HeroCard
-              term={term}
-              drafts={draftUnits}
-              published={publishedUnits}
-              scheduled={scheduledUnits}
-            />
+        {/* ── No active term warning ── */}
+        {!term && (
+          <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3.5">
+            <Calendar className="w-4 h-4 text-amber-500 shrink-0" />
+            <p className="text-sm font-semibold text-amber-800 flex-1">No active term selected.</p>
+            <button
+              onClick={() => router.push('/setup/terms')}
+              className="text-xs font-bold text-amber-700 underline underline-offset-2 hover:text-amber-900 transition-colors"
+            >
+              Set up →
+            </button>
+          </div>
+        )}
 
-            {/* No term warning */}
-            {!term && (
-              <div className="mx-4 mt-4 lg:mx-0 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
-                <Calendar className="w-4 h-4 text-amber-500 shrink-0" />
-                <p className="text-sm font-semibold text-amber-800 flex-1">No active term.</p>
-                <button
-                  onClick={() => router.push('/setup/terms')}
-                  className="text-xs font-bold underline underline-offset-2 text-amber-700"
-                >
-                  Set up →
-                </button>
+        {/* ── Main grid: 3-col on lg ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6">
+
+          {/* ── Left col: Stats + Status ── */}
+          <div className="lg:col-span-2 space-y-5 lg:space-y-6">
+
+            {/* Stats row */}
+            <div>
+              <SectionHeading title="Overview" />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:gap-4">
+                <StatCard icon={GraduationCap} label="Cohorts"    value={cohorts    ?? 0} accent="#0d9488" />
+                <StatCard icon={Users}         label="Trainers"   value={trainers   ?? 0} accent="#6366f1" />
+                <StatCard icon={DoorOpen}      label="Rooms"      value={rooms      ?? 0} accent="#059669" />
+                <StatCard icon={Layers}        label="Programmes" value={programmes ?? 0} accent="#f59e0b" />
               </div>
-            )}
-
-            {/* Mobile/tablet: stacked sections */}
-            <div className="px-4 pt-6 space-y-6 lg:hidden">
-              <MobileQuickActions
-                busy={busy}
-                hasConflicts={hasConflicts}
-                router={router}
-                onGenerate={handleGenerate}
-                onPublish={handlePublish}
-                onClear={handleClear}
-              />
-              <StatusSection
-                publishedUnits={publishedUnits}
-                draftUnits={draftUnits}
-                scheduledUnits={scheduledUnits}
-                hasConflicts={hasConflicts}
-                pendingConflicts={pendingConflicts}
-                router={router}
-              />
-              <Section title="Overview">
-                <div className="grid grid-cols-2 gap-3">
-                  <StatTile icon={GraduationCap} label="Cohorts"    value={cohorts    ?? 0} bg="#eff6ff" color="#1d4ed8" />
-                  <StatTile icon={Users}         label="Trainers"   value={trainers   ?? 0} bg="#f5f3ff" color="#7c3aed" />
-                  <StatTile icon={DoorOpen}      label="Rooms"      value={rooms      ?? 0} bg="#ecfdf5" color="#059669" />
-                  <StatTile icon={Layers}        label="Programmes" value={programmes ?? 0} bg="#fffbeb" color="#d97706" />
-                </div>
-              </Section>
-              <QuickAccessSection router={router} />
-              <SetupSection router={router} />
             </div>
+
+            {/* Timetable status */}
+            <div>
+              <SectionHeading title="Timetable Status" />
+              <Card className="p-5 space-y-5">
+                <ProgressBar label="Published" value={publishedUnits} total={scheduledUnits} color={T.teal} />
+                <ProgressBar label="Drafts"    value={draftUnits}     total={scheduledUnits} color="#f59e0b" />
+
+                {hasConflicts ? (
+                  <button
+                    onClick={() => router.push('/conflicts')}
+                    className="flex items-center gap-3 w-full bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-left hover:bg-red-100 transition-colors"
+                  >
+                    <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                    <p className="text-xs font-bold text-red-700 flex-1">
+                      {pendingConflicts} conflict{pendingConflicts > 1 ? 's' : ''} require resolution
+                    </p>
+                    <ChevronRight className="w-4 h-4 text-red-300 shrink-0" />
+                  </button>
+                ) : scheduledUnits > 0 ? (
+                  <div className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: T.tealLight, border: `1px solid ${T.tealBorder}` }}>
+                    <ShieldCheck className="w-4 h-4 shrink-0" style={{ color: T.teal }} />
+                    <p className="text-xs font-bold" style={{ color: T.tealDark }}>No conflicts — ready to publish</p>
+                  </div>
+                ) : null}
+              </Card>
+            </div>
+
+            {/* Quick access */}
+            <div>
+              <SectionHeading title="Quick Access" />
+              <Card className="divide-y divide-gray-50/80 overflow-hidden py-1">
+                <NavRow
+                  icon={LayoutGrid}
+                  label="Master Timetable"
+                  sub="Complete schedule overview"
+                  iconBg={T.tealLight}
+                  iconColor={T.teal}
+                  onClick={() => router.push('/timetable')}
+                />
+                <NavRow
+                  icon={GraduationCap}
+                  label="By Cohort"
+                  sub="Per-cohort timetable view"
+                  iconBg="#eff6ff"
+                  iconColor="#3b82f6"
+                  onClick={() => router.push('/timetable/cohorts')}
+                />
+                <NavRow
+                  icon={Users}
+                  label="By Trainer"
+                  sub="Individual trainer schedules"
+                  iconBg="#f5f3ff"
+                  iconColor="#7c3aed"
+                  onClick={() => router.push('/timetable/trainers')}
+                />
+                <NavRow
+                  icon={ShieldCheck}
+                  label="Constraints"
+                  sub="Manage scheduling rules"
+                  iconBg="#fef2f2"
+                  iconColor="#e11d48"
+                  onClick={() => router.push('/constraints')}
+                />
+              </Card>
+            </div>
+
           </div>
 
-          {/* Desktop right column: actions + status */}
-          <div className="hidden lg:flex lg:flex-col lg:gap-6 lg:pt-0">
-            <DesktopActionCard
-              busy={busy}
-              hasConflicts={hasConflicts}
-              pendingConflicts={pendingConflicts}
-              draftUnits={draftUnits}
-              canPublish={canPublish}
-              router={router}
-              onGenerate={handleGenerate}
-              onPublish={handlePublish}
-              onClear={handleClear}
-            />
-          </div>
+          {/* ── Right col: Actions + Setup ── */}
+          <div className="space-y-5 lg:space-y-6">
 
-        </div>
+            {/* Actions */}
+            <div>
+              <SectionHeading title="Actions" />
+              <Card className="p-4 space-y-2.5">
+                <ActionBtn
+                  icon={Zap}
+                  label="Generate Timetable"
+                  description="Auto-schedule all units for this term"
+                  onClick={handleGenerate}
+                  loading={busy === 'generate'}
+                  disabled={!!busy}
+                  variant="primary"
+                />
+                <ActionBtn
+                  icon={CheckCircle}
+                  label="Publish Drafts"
+                  description={
+                    canPublish
+                      ? `${draftUnits} draft${draftUnits > 1 ? 's' : ''} ready to publish`
+                      : hasConflicts
+                      ? 'Resolve conflicts before publishing'
+                      : 'No drafts available to publish'
+                  }
+                  onClick={() => handlePublish()}
+                  loading={busy === 'publish'}
+                  disabled={!!busy || !canPublish}
+                  variant="success"
+                />
+                {hasConflicts && (
+                  <ActionBtn
+                    icon={AlertTriangle}
+                    label="Resolve Conflicts"
+                    description={`${pendingConflicts} scheduling conflict${pendingConflicts > 1 ? 's' : ''} pending`}
+                    onClick={() => router.push('/conflicts')}
+                    variant="warning"
+                  />
+                )}
+                {draftUnits > 0 && (
+                  <ActionBtn
+                    icon={Trash2}
+                    label="Clear Drafts"
+                    description="Permanently remove all draft entries"
+                    onClick={handleClear}
+                    loading={busy === 'clear'}
+                    disabled={!!busy}
+                    variant="danger"
+                  />
+                )}
+              </Card>
+            </div>
 
-        {/* Desktop: full-width sections below the 2-col hero */}
-        <div className="hidden lg:block lg:pt-6 lg:space-y-6">
-
-          {/* Status + Stats side by side */}
-          <div className="grid grid-cols-[1fr_1fr] gap-6">
-            <StatusSection
-              publishedUnits={publishedUnits}
-              draftUnits={draftUnits}
-              scheduledUnits={scheduledUnits}
-              hasConflicts={hasConflicts}
-              pendingConflicts={pendingConflicts}
-              router={router}
-            />
-            <Section title="Overview">
-              <div className="grid grid-cols-2 gap-3">
-                <StatTile icon={GraduationCap} label="Cohorts"    value={cohorts    ?? 0} bg="#eff6ff" color="#1d4ed8" />
-                <StatTile icon={Users}         label="Trainers"   value={trainers   ?? 0} bg="#f5f3ff" color="#7c3aed" />
-                <StatTile icon={DoorOpen}      label="Rooms"      value={rooms      ?? 0} bg="#ecfdf5" color="#059669" />
-                <StatTile icon={Layers}        label="Programmes" value={programmes ?? 0} bg="#fffbeb" color="#d97706" />
+            {/* Setup */}
+            <div>
+              <SectionHeading title="Setup" />
+              <div className="grid grid-cols-4 gap-2">
+                {SETUP_LINKS.map(({ href, icon, label }) => (
+                  <SetupBtn key={href} icon={icon} label={label} onClick={() => router.push(href)} />
+                ))}
               </div>
-            </Section>
-          </div>
-
-          {/* Quick access + Setup side by side */}
-          <div className="grid grid-cols-[1fr_auto] gap-6 items-start">
-            <QuickAccessSection router={router} />
-            <div className="w-[340px]">
-              <SetupSection router={router} />
             </div>
+
           </div>
-
         </div>
-
       </div>
     </div>
   )

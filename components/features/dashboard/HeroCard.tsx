@@ -5,14 +5,42 @@ import {
   Bell, ArrowRight, BookOpen, CheckCircle2, Clock,
   CalendarDays, TrendingUp, Layers, AlertCircle,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
-const TEAL_700  = '#0f766e'
-const TEAL_600  = '#0d9488'
-const TEAL_500  = '#14b8a6'
-const TEAL_400  = '#2dd4bf'
-const TEAL_300  = '#5eead4'
+const T = {
+  // Gradient: starts bright teal-400, transitions through teal-500, ends teal-600 — never deep
+  gradFrom:    '#2dd4bf',   // teal-400  — bright, fresh top-left
+  gradMid:     '#14b8a6',   // teal-500  — mid
+  gradTo:      '#0d9488',   // teal-600  — grounded base, not dark
+
+  teal:        '#0d9488',
+  tealDark:    '#0f766e',
+  tealDeep:    '#134e4a',
+  white:       '#ffffff',
+
+  // Glass layers
+  glass10:     'rgba(255,255,255,0.10)',
+  glass14:     'rgba(255,255,255,0.14)',
+  glass18:     'rgba(255,255,255,0.18)',
+  glass22:     'rgba(255,255,255,0.22)',
+  glass28:     'rgba(255,255,255,0.28)',
+
+  // Text on teal
+  textPrimary: 'rgba(255,255,255,1.00)',
+  textSecond:  'rgba(255,255,255,0.88)',
+  textMuted:   'rgba(255,255,255,0.72)',
+
+  // Semantic chips
+  emerald:     'rgba(52,211,153,0.22)',
+  emeraldBrd:  'rgba(52,211,153,0.38)',
+  emeraldDot:  '#34d399',
+  amber:       'rgba(251,191,36,0.20)',
+  amberBrd:    'rgba(251,191,36,0.34)',
+  amberDot:    '#fbbf24',
+  slate:       'rgba(148,163,184,0.18)',
+  slateBrd:    'rgba(148,163,184,0.28)',
+  slateDot:    '#94a3b8',
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function fmt(dateStr?: string) {
@@ -22,88 +50,117 @@ function fmt(dateStr?: string) {
   })
 }
 
-// ── Progress arc (date-based) ──────────────────────────────────────────────────
-function ProgressArc({
-  pct, week, totalWeeks, size = 80,
-}: {
-  pct: number; week: number; totalWeeks: number; size?: number
-}) {
-  const r    = (size - 10) / 2
+// ── Progress arc ───────────────────────────────────────────────────────────────
+function ProgressArc({ pct, size = 80 }: { pct: number; size?: number }) {
+  const strokeW = 5.5
+  const r    = (size - strokeW * 2) / 2
   const cx   = size / 2
   const cy   = size / 2
   const circ = 2 * Math.PI * r
   const dash = (Math.min(pct, 100) / 100) * circ
 
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.20)" strokeWidth={5} />
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-label={`${Math.round(pct)}% complete`}>
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth={strokeW} />
       <circle
         cx={cx} cy={cy} r={r} fill="none"
-        stroke="rgba(255,255,255,0.90)"
-        strokeWidth={5}
+        stroke="rgba(255,255,255,0.95)"
+        strokeWidth={strokeW}
         strokeLinecap="round"
         strokeDasharray={`${dash} ${circ}`}
         transform={`rotate(-90 ${cx} ${cy})`}
-        style={{ transition: 'stroke-dasharray 0.8s cubic-bezier(.4,0,.2,1)' }}
+        style={{ transition: 'stroke-dasharray 0.9s cubic-bezier(.4,0,.2,1)' }}
       />
-      <text x={cx} y={cy - 5} textAnchor="middle" fontSize="15" fontWeight="700" fill="white">
+      <text x={cx} y={cy - 4} textAnchor="middle" fontSize="15" fontWeight="700" fill="white" fontFamily="'DM Sans', sans-serif">
         {Math.round(pct)}%
       </text>
-      <text x={cx} y={cy + 9} textAnchor="middle" fontSize="7.5" fontWeight="500"
-        fill="rgba(255,255,255,0.65)" letterSpacing="0.08em">
-        WK {week}/{totalWeeks}
+      <text x={cx} y={cy + 9} textAnchor="middle" fontSize="6" fontWeight="700" fill="rgba(255,255,255,0.72)" letterSpacing="0.09em" fontFamily="'DM Sans', sans-serif">
+        COMPLETE
       </text>
     </svg>
-  )
-}
-
-// ── Stat pill ──────────────────────────────────────────────────────────────────
-function StatPill({
-  icon: Icon, label, value, accent,
-}: {
-  icon: React.ElementType; label: string; value: number; accent: string
-}) {
-  return (
-    <div className="flex flex-col gap-1.5 rounded-2xl bg-white/15 backdrop-blur-sm px-3.5 py-2.5 border border-white/20 hover:bg-white/20 transition-colors">
-      <div className="flex items-center justify-between">
-        <div className="flex h-7 w-7 items-center justify-center rounded-xl" style={{ background: accent }}>
-          <Icon className="h-3.5 w-3.5 text-white" strokeWidth={2} />
-        </div>
-        <span className="text-2xl font-bold text-white tabular-nums leading-none">{value}</span>
-      </div>
-      <p className="text-[11px] font-semibold text-white/70 tracking-wide uppercase leading-none">
-        {label}
-      </p>
-    </div>
   )
 }
 
 // ── Status badge ───────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: 'active' | 'upcoming' | 'completed' }) {
   const map = {
-    active:    { label: 'Active',    bg: 'rgba(52,211,153,0.25)', dot: '#34d399' },
-    upcoming:  { label: 'Upcoming',  bg: 'rgba(251,191,36,0.25)', dot: '#fbbf24' },
-    completed: { label: 'Completed', bg: 'rgba(148,163,184,0.20)', dot: '#94a3b8' },
+    active:    { label: 'Active',    bg: T.emerald, border: T.emeraldBrd, dot: T.emeraldDot },
+    upcoming:  { label: 'Upcoming',  bg: T.amber,   border: T.amberBrd,   dot: T.amberDot   },
+    completed: { label: 'Completed', bg: T.slate,   border: T.slateBrd,   dot: T.slateDot   },
   }
   const s = map[status]
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white uppercase tracking-widest border border-white/20"
-      style={{ background: s.bg }}
+      className="inline-flex items-center gap-[5px] rounded-full px-2 py-[3px] text-[9px] font-black text-white uppercase tracking-[0.11em]"
+      style={{ background: s.bg, border: `1px solid ${s.border}` }}
     >
-      <span className="h-1.5 w-1.5 rounded-full" style={{ background: s.dot }} />
+      <span className="h-[5px] w-[5px] rounded-full shrink-0" style={{ background: s.dot }} />
       {s.label}
     </span>
   )
 }
 
-// ── Main HeroCard ──────────────────────────────────────────────────────────────
+// ── Stat cell ──────────────────────────────────────────────────────────────────
+function StatCell({
+  icon: Icon, iconBg, value, label,
+}: {
+  icon: React.ElementType; iconBg: string; value: number; label: string
+}) {
+  return (
+    <div
+      className="flex flex-col rounded-[14px] px-3 pt-3 pb-2.5 gap-2"
+      style={{ background: T.glass10, border: `1px solid ${T.glass18}` }}
+    >
+      <div className="flex items-center justify-between">
+        <div
+          className="flex h-[26px] w-[26px] items-center justify-center rounded-[8px] shrink-0"
+          style={{ background: iconBg }}
+        >
+          <Icon className="h-[13px] w-[13px] text-white" strokeWidth={2.2} />
+        </div>
+        <span
+          className="text-[22px] font-bold tabular-nums leading-none"
+          style={{ color: T.textPrimary, fontFamily: "'DM Sans', sans-serif" }}
+        >
+          {value}
+        </span>
+      </div>
+      <p className="text-[9px] font-black uppercase tracking-[0.10em]" style={{ color: T.textMuted }}>
+        {label}
+      </p>
+    </div>
+  )
+}
+
+// ── Chip ───────────────────────────────────────────────────────────────────────
+function Chip({
+  icon: Icon, children, variant = 'default',
+}: {
+  icon: React.ElementType; children: React.ReactNode; variant?: 'default' | 'amber' | 'muted'
+}) {
+  const styles = {
+    default: { bg: T.glass14, border: T.glass22 },
+    amber:   { bg: T.amber,   border: T.amberBrd },
+    muted:   { bg: 'rgba(255,255,255,0.07)', border: T.glass14 },
+  }
+  const s = styles[variant]
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-[4px] text-[11px] font-semibold text-white"
+      style={{ background: s.bg, border: `1px solid ${s.border}` }}
+    >
+      <Icon className="h-[11px] w-[11px] shrink-0 opacity-80" strokeWidth={2.2} />
+      {children}
+    </span>
+  )
+}
+
+// ── Props ──────────────────────────────────────────────────────────────────────
 interface HeroCardProps {
   term: {
     name: string
     start_date?: string
     end_date?: string
-    // Accurate date-derived fields (from updated _term_dict)
     progress_pct?: number
     current_week?: number
     total_weeks?: number
@@ -112,7 +169,6 @@ interface HeroCardProps {
     days_elapsed?: number
     total_days?: number
     status?: 'active' | 'upcoming' | 'completed'
-    // Fallback legacy fields
     week_number?: number
     teaching_weeks?: number
   } | null
@@ -121,184 +177,162 @@ interface HeroCardProps {
   scheduled: number
 }
 
+// ── HeroCard ───────────────────────────────────────────────────────────────────
 export default function HeroCard({ term, drafts, published, scheduled }: HeroCardProps) {
   const router = useRouter()
 
-  // Prefer new accurate fields, fall back to legacy
-  const pct           = term?.progress_pct    ?? 0
-  const week          = term?.current_week    ?? term?.week_number     ?? 0
-  const totalWeeks    = term?.total_weeks     ?? term?.teaching_weeks  ?? 0
-  const weeksLeft     = term?.weeks_remaining ?? 0
-  const daysLeft      = term?.days_remaining  ?? 0
-  const totalDays     = term?.total_days      ?? 0
-  const daysElapsed   = term?.days_elapsed    ?? 0
-  const termStatus    = term?.status          ?? 'active'
+  const pct         = term?.progress_pct    ?? 0
+  const week        = term?.current_week    ?? term?.week_number    ?? 0
+  const totalWeeks  = term?.total_weeks     ?? term?.teaching_weeks ?? 0
+  const weeksLeft   = term?.weeks_remaining ?? 0
+  const daysLeft    = term?.days_remaining  ?? 0
+  const totalDays   = term?.total_days      ?? 0
+  const daysElapsed = term?.days_elapsed    ?? 0
+  const termStatus  = term?.status          ?? 'active'
 
   return (
     <section
       aria-label="Term overview"
-      className={cn(
-        'relative overflow-hidden',
-        'mx-0 sm:mx-4 lg:mx-0',
-        'rounded-none sm:rounded-3xl lg:rounded-3xl',
-      )}
+      className="relative overflow-hidden w-full sm:rounded-[22px]"
       style={{
-        background: `
-          radial-gradient(ellipse at 110% -10%, ${TEAL_300}60 0%, transparent 55%),
-          radial-gradient(ellipse at -10% 110%, ${TEAL_600} 0%, ${TEAL_500} 50%, ${TEAL_400} 100%)
-        `,
+        // Bright teal-400 → teal-500 → teal-600 — vibrant, never muddy
+        background: `linear-gradient(140deg, ${T.gradFrom} 0%, ${T.gradMid} 45%, ${T.gradTo} 100%)`,
       }}
     >
-      {/* Grid texture */}
+      {/* ── Atmospheric orbs ── */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.06]"
+        className="pointer-events-none absolute -top-20 -right-20 h-[280px] w-[280px] rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 65%)' }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-16 -left-12 h-[200px] w-[200px] rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.07) 0%, transparent 65%)' }}
+      />
+      {/* Grain texture */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-40"
         style={{
-          backgroundImage: `
-            linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)
-          `,
-          backgroundSize: '32px 32px',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E")`,
+          backgroundSize: '200px 200px',
         }}
       />
 
-      {/* Glow orbs */}
-      <div aria-hidden className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full blur-3xl" style={{ background: `${TEAL_300}40` }} />
-      <div aria-hidden className="pointer-events-none absolute -bottom-16 -left-16 h-56 w-56 rounded-full blur-3xl" style={{ background: 'rgba(255,255,255,0.12)' }} />
+      {/* ── Content ── */}
+      <div className="relative px-5 pt-5 pb-5 sm:px-6 sm:pt-5 sm:pb-6 flex flex-col gap-4">
 
-      {/* Content */}
-      <div className="relative px-5 pt-5 pb-4 sm:px-6 sm:pt-6 sm:pb-5 lg:px-8 lg:pt-6 lg:pb-5">
-
-        {/* Top row */}
-        <div className="flex items-center justify-between mb-4 sm:mb-5">
+        {/* Top bar */}
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{ background: 'rgba(255,255,255,0.20)' }}>
-              <CalendarDays className="h-3 w-3 text-white" />
+            <div
+              className="flex h-7 w-7 items-center justify-center rounded-lg shrink-0"
+              style={{ background: T.glass18, border: `1px solid ${T.glass22}` }}
+            >
+              <CalendarDays className="h-[14px] w-[14px] text-white opacity-80" strokeWidth={2} />
             </div>
-            <span className="text-xs font-bold uppercase tracking-[0.12em] text-white/70">
+            <span className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: T.textMuted }}>
               Timetable Admin
             </span>
           </div>
+
           <button
-            className="relative flex h-8 w-8 items-center justify-center rounded-xl border border-white/25 bg-white/15 backdrop-blur-sm text-white transition-all hover:bg-white/25 active:scale-95"
-            aria-label="View notifications"
+            className="relative flex h-8 w-8 items-center justify-center rounded-[10px] text-white transition-all hover:scale-105 active:scale-95"
+            style={{ background: T.glass14, border: `1px solid ${T.glass22}` }}
+            aria-label="Notifications"
           >
-            <Bell className="h-3.5 w-3.5" />
-            <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-amber-300 ring-1 ring-teal-500" aria-hidden />
+            <Bell className="h-[15px] w-[15px]" strokeWidth={2} />
+            <span
+              aria-hidden
+              className="absolute top-[7px] right-[7px] h-[6px] w-[6px] rounded-full"
+              style={{ background: T.amberDot, border: '1.5px solid #14b8a6' }}
+            />
           </button>
         </div>
 
-        {/* Main content */}
-        <div className="flex items-center justify-between gap-6 mb-4 sm:mb-5">
-          <div className="min-w-0 flex-1">
-            {term ? (
-              <>
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="text-[10px] font-semibold text-white/60 uppercase tracking-widest">
-                    Active term
-                  </p>
-                  <StatusBadge status={termStatus} />
-                </div>
+        {/* Term name + arc */}
+        {term ? (
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-[10px] font-black uppercase tracking-[0.13em]" style={{ color: T.textMuted }}>
+                  Active term
+                </span>
+                <StatusBadge status={termStatus} />
+              </div>
 
-                <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight tracking-tight mb-1">
-                  {term.name}
-                </h1>
+              <h1
+                className="text-[23px] font-bold leading-[1.12] tracking-[-0.02em] truncate mb-1"
+                style={{ color: T.textPrimary, fontFamily: "'DM Serif Display', Georgia, serif" }}
+              >
+                {term.name}
+              </h1>
 
-                {/* Date range */}
-                {term.start_date && term.end_date && (
-                  <p className="text-[11px] text-white/50 mb-2.5 font-medium">
-                    {fmt(term.start_date)} → {fmt(term.end_date)}
-                  </p>
-                )}
-
-                {/* Progress bar — mobile only */}
-                <div className="sm:hidden mb-2.5">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-white/60 font-medium">Term progress</span>
-                    <span className="text-xs font-bold text-white">{pct}%</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-white/20 overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-700 bg-white"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  {daysLeft > 0 && (
-                    <p className="text-[10px] text-white/50 mt-1">{daysLeft} days remaining</p>
-                  )}
-                </div>
-
-                {/* Chips */}
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-white/15 border border-white/20 px-2.5 py-0.5 text-xs font-semibold text-white">
-                    <Clock className="h-2.5 w-2.5" />
-                    Week {week || '—'} of {Math.round(totalWeeks) || '—'}
-                  </span>
-                  {termStatus === 'active' && daysLeft > 0 && (
-                    <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold bg-white/20 text-white">
-                      <TrendingUp className="h-2.5 w-2.5" />
-                      {daysLeft}d · {weeksLeft}w left
-                    </span>
-                  )}
-                  {termStatus === 'upcoming' && term.start_date && (
-                    <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold bg-amber-400/25 text-white border border-white/20">
-                      <AlertCircle className="h-2.5 w-2.5" />
-                      Starts {fmt(term.start_date)}
-                    </span>
-                  )}
-                  {termStatus === 'completed' && (
-                    <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold bg-white/15 text-white border border-white/20">
-                      <CheckCircle2 className="h-2.5 w-2.5" />
-                      Term ended
-                    </span>
-                  )}
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="text-[10px] font-semibold text-white/60 uppercase tracking-widest mb-1">
-                  No active term
+              {term.start_date && term.end_date && (
+                <p className="text-[11px] font-medium mb-3" style={{ color: T.textMuted }}>
+                  {fmt(term.start_date)} — {fmt(term.end_date)}
                 </p>
-                <h1 className="text-xl sm:text-2xl font-bold text-white/70 leading-tight tracking-tight mb-2.5">
-                  Set up a term to begin
-                </h1>
-                <button
-                  onClick={() => router.push('/setup/terms')}
-                  className="inline-flex items-center gap-2 text-sm font-semibold rounded-xl px-3.5 py-1.5 transition-all active:scale-95 bg-white/20 text-white hover:bg-white/30"
-                >
-                  Go to Terms <ArrowRight className="h-3.5 w-3.5" />
-                </button>
-              </>
+              )}
+
+              <div className="flex flex-wrap items-center gap-1.5">
+                <Chip icon={Clock} variant="default">Week {week || '—'} / {Math.round(totalWeeks) || '—'}</Chip>
+                {termStatus === 'active' && daysLeft > 0 && (
+                  <Chip icon={TrendingUp} variant="amber">{daysLeft}d · {weeksLeft}w left</Chip>
+                )}
+                {termStatus === 'upcoming' && term.start_date && (
+                  <Chip icon={AlertCircle} variant="amber">Starts {fmt(term.start_date)}</Chip>
+                )}
+                {termStatus === 'completed' && (
+                  <Chip icon={CheckCircle2} variant="muted">Term ended</Chip>
+                )}
+              </div>
+            </div>
+
+            {totalWeeks > 0 && (
+              <div className="hidden sm:flex shrink-0">
+                <ProgressArc pct={pct} size={80} />
+              </div>
             )}
           </div>
+        ) : (
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.13em] mb-1.5" style={{ color: T.textMuted }}>
+              No active term
+            </p>
+            <h1
+              className="text-[22px] font-bold leading-[1.15] tracking-[-0.02em] mb-4"
+              style={{ color: 'rgba(255,255,255,0.82)', fontFamily: "'DM Serif Display', Georgia, serif" }}
+            >
+              Set up a term to begin
+            </h1>
+            <button
+              onClick={() => router.push('/setup/terms')}
+              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-bold text-white transition-all hover:opacity-90 active:scale-[.98]"
+              style={{ background: T.glass18, border: `1px solid ${T.glass22}` }}
+            >
+              Go to Terms <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
 
-          {/* Arc — sm+ only */}
-          {term && totalWeeks > 0 && (
-            <div className="hidden sm:block shrink-0">
-              <ProgressArc pct={pct} week={week} totalWeeks={Math.round(totalWeeks)} size={76} />
-            </div>
-          )}
-        </div>
-
-        {/* ── Full progress bar (sm+) ── */}
+        {/* Progress bar */}
         {term && totalDays > 0 && (
-          <div className="hidden sm:block mb-3">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] text-white/50 font-semibold uppercase tracking-widest">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[9.5px] font-black uppercase tracking-[0.12em]" style={{ color: T.textMuted }}>
                 Term progress
               </span>
-              <span className="text-[10px] text-white/60 font-medium">
-                {daysElapsed}d elapsed · {daysLeft}d remaining · {totalDays}d total
+              <span className="text-[10px] font-medium tabular-nums" style={{ color: T.textMuted }}>
+                {daysElapsed}d elapsed · {daysLeft}d remaining
               </span>
             </div>
-            <div className="h-1.5 rounded-full bg-white/20 overflow-hidden">
+            <div className="relative h-[4px] w-full rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.22)' }}>
               <div
-                className="h-full rounded-full transition-all duration-700"
+                className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
                 style={{
-                  width: `${pct}%`,
-                  background: termStatus === 'completed'
-                    ? 'rgba(52,211,153,0.9)'
-                    : 'rgba(255,255,255,0.9)',
+                  width: `${Math.min(pct, 100)}%`,
+                  background: termStatus === 'completed' ? 'rgba(52,211,153,0.88)' : 'rgba(255,255,255,0.85)',
                 }}
               />
             </div>
@@ -306,31 +340,34 @@ export default function HeroCard({ term, drafts, published, scheduled }: HeroCar
         )}
 
         {/* Divider */}
-        <div className="mb-3 sm:mb-4 h-px bg-white/15" />
+        <div className="w-full h-px" style={{ background: 'rgba(255,255,255,0.20)' }} />
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-2 mb-3 sm:mb-4">
-          <StatPill icon={Layers}       label="Drafts"     value={drafts}    accent="rgba(255,255,255,0.20)" />
-          <StatPill icon={CheckCircle2} label="Published"  value={published} accent="rgba(255,255,255,0.30)" />
-          <StatPill icon={Clock}        label="Scheduled"  value={scheduled} accent="rgba(251,191,36,0.35)"  />
+        <div className="grid grid-cols-3 gap-2">
+          <StatCell icon={Layers}      iconBg={T.glass28}                   value={drafts}    label="Drafts"     />
+          <StatCell icon={CheckCircle2} iconBg="rgba(52,211,153,0.30)"      value={published} label="Published"  />
+          <StatCell icon={Clock}        iconBg="rgba(251,191,36,0.30)"      value={scheduled} label="Scheduled"  />
         </div>
 
-        {/* CTA */}
+        {/* CTAs */}
         <div className="flex gap-2">
           <button
             onClick={() => router.push('/timetable')}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 px-4 text-sm font-bold transition-all active:scale-[.98]"
-            style={{ background: 'white', color: TEAL_700, boxShadow: '0 4px 24px rgba(0,0,0,0.12)' }}
+            className="flex flex-1 items-center justify-center gap-2 rounded-[13px] py-[11px] px-4 text-[13px] font-bold tracking-[-0.01em] transition-all hover:opacity-92 hover:-translate-y-[1px] active:scale-[.98]"
+            style={{ background: 'white', color: T.teal }}
           >
-            <BookOpen className="h-4 w-4 shrink-0" />
+            <BookOpen className="h-[15px] w-[15px] shrink-0" strokeWidth={2.2} />
             View Timetable
           </button>
           <button
             onClick={() => router.push('/setup/term_units')}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 px-4 text-sm font-bold border border-white/30 bg-white/15 text-white backdrop-blur-sm transition-all hover:bg-white/25 active:scale-[.98]"
+            className="flex flex-1 items-center justify-center gap-2 rounded-[13px] py-[11px] px-4 text-[13px] font-bold text-white tracking-[-0.01em] transition-all hover:-translate-y-[1px] active:scale-[.98]"
+            style={{ background: T.glass14, border: `1px solid ${T.glass22}` }}
+            onMouseEnter={e => (e.currentTarget.style.background = T.glass22)}
+            onMouseLeave={e => (e.currentTarget.style.background = T.glass14)}
           >
             Assign Units
-            <ArrowRight className="h-4 w-4 shrink-0" />
+            <ArrowRight className="h-[15px] w-[15px] shrink-0" strokeWidth={2.2} />
           </button>
         </div>
 
