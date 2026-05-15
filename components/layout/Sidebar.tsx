@@ -63,6 +63,14 @@ const BOTTOM_NAV = [
   { href: '/setup/institution', icon: Settings,        label: 'Setup',     matchPrefix: '/setup'      },
 ]
 
+// ── Sidebar width token — change here to update everywhere ────────────────
+// w-56 = 224px — tighter than the old w-60 (240px), less dominant on large screens
+const SIDEBAR_W      = 'w-56'
+const SIDEBAR_PL     = 'lg:pl-56'   // exported for AppShell to use
+const SIDEBAR_OFFSET = 'lg:left-56' // for the fixed wrapper
+
+export { SIDEBAR_W, SIDEBAR_PL }
+
 // ── Helpers ───────────────────────────────────────────────────────────────
 function isActive(href: string, pathname: string) {
   return href === '/dashboard'
@@ -128,7 +136,6 @@ function NavItem({
             : {}
         }
       >
-        {/* Icon with tinted bg when active */}
         <span
           className={cn(
             'flex h-6 w-6 shrink-0 items-center justify-center rounded-lg transition-all duration-150',
@@ -173,60 +180,50 @@ function DesktopSidebar() {
   }, [pathname])
 
   return (
-    <aside className="flex h-full w-60 flex-col bg-white border-r border-gray-100/80">
+    // w-56 = 224px — narrower sidebar that doesn't dominate on large screens
+    <aside className={cn('flex h-full flex-col bg-white border-r border-gray-100/80 relative', SIDEBAR_W)}>
       {/* Subtle inner shadow on right edge */}
       <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-gray-200/60 to-transparent pointer-events-none" />
 
       {/* Logo */}
-      <div className="flex h-16 items-center gap-2.5 border-b border-gray-100 px-5 shrink-0">
+      <div className="flex h-14 items-center gap-2.5 border-b border-gray-100 px-4 shrink-0">
         <div
-          className="flex h-8 w-8 items-center justify-center rounded-xl shrink-0 shadow-sm"
+          className="flex h-7 w-7 items-center justify-center rounded-xl shrink-0 shadow-sm"
           style={{ background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})` }}
         >
-          <Calendar className="h-4 w-4 text-white" />
+          <Calendar className="h-3.5 w-3.5 text-white" />
         </div>
         <span
-          className="text-[15px] font-bold tracking-tight"
+          className="text-[14px] font-bold tracking-tight"
           style={{ color: BRAND_DARK }}
         >
           Timetabler
         </span>
       </div>
 
-      {/* Nav — scrollable with custom scrollbar */}
+      {/* Nav — scrollable */}
       <nav
-        className="flex-1 overflow-y-auto px-3 py-4 space-y-5"
+        className="sidebar-nav flex-1 overflow-y-auto px-2.5 py-3.5 space-y-4"
         style={{
           scrollbarWidth: 'thin',
           scrollbarColor: `${BRAND_MID} transparent`,
         }}
       >
         <style>{`
-          .sidebar-nav::-webkit-scrollbar {
-            width: 4px;
-          }
-          .sidebar-nav::-webkit-scrollbar-track {
-            background: transparent;
-          }
-          .sidebar-nav::-webkit-scrollbar-thumb {
-            background: ${BRAND_MID};
-            border-radius: 99px;
-          }
-          .sidebar-nav::-webkit-scrollbar-thumb:hover {
-            background: ${BRAND};
-          }
+          .sidebar-nav::-webkit-scrollbar { width: 3px; }
+          .sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+          .sidebar-nav::-webkit-scrollbar-thumb { background: ${BRAND_MID}; border-radius: 99px; }
+          .sidebar-nav::-webkit-scrollbar-thumb:hover { background: ${BRAND}; }
         `}</style>
 
         {NAV.map(section => (
           <div key={section.label} id={section.id}>
-            {/* Section label with subtle line */}
-            <div className="mb-2 flex items-center gap-2 px-2.5">
-              <p className="text-[9.5px] font-bold uppercase tracking-[0.12em] text-gray-400">
+            <div className="mb-1.5 flex items-center gap-2 px-2">
+              <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-gray-400 whitespace-nowrap">
                 {section.label}
               </p>
               <div className="h-px flex-1 bg-gray-100" />
             </div>
-
             <ul className="space-y-0.5">
               {section.items.map(({ href, icon, label }) => (
                 <NavItem key={href} href={href} icon={icon} label={label} />
@@ -235,13 +232,12 @@ function DesktopSidebar() {
           </div>
         ))}
 
-        {/* Bottom breathing room */}
         <div className="h-2" />
       </nav>
 
       {/* User footer */}
-      <div className="border-t border-gray-100 px-4 py-3 shrink-0 bg-gray-50/40">
-        <div className="flex items-center gap-3">
+      <div className="border-t border-gray-100 px-3 py-3 shrink-0 bg-gray-50/40">
+        <div className="flex items-center gap-2.5">
           <Avatar name={user?.username ?? 'U'} />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-gray-800 leading-tight">
@@ -253,7 +249,7 @@ function DesktopSidebar() {
           </div>
           <button
             onClick={logout}
-            className="rounded-xl p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all duration-150"
+            className="rounded-xl p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all duration-150 shrink-0"
             title="Logout"
           >
             <LogOut className="h-4 w-4" />
@@ -331,9 +327,7 @@ function MobileBottomNav() {
               style={active ? { color: BRAND_DARK } : {}}
             >
               <div
-                className={cn(
-                  'flex items-center justify-center w-10 h-6 rounded-full transition-all duration-150',
-                )}
+                className="flex items-center justify-center w-10 h-6 rounded-full transition-all duration-150"
                 style={active ? { background: `${BRAND}15` } : {}}
               >
                 <Icon
@@ -362,21 +356,13 @@ function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void })
 
   return (
     <div className="fixed inset-0 z-50 lg:hidden">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Sheet */}
       <div className="absolute bottom-0 left-0 right-0 max-h-[88dvh] rounded-t-3xl bg-white shadow-2xl flex flex-col overflow-hidden">
-
-        {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-1 shrink-0">
           <div className="h-1 w-10 rounded-full bg-gray-200" />
         </div>
 
-        {/* Header */}
         <div className="flex items-center justify-between px-5 pt-2 pb-3 border-b border-gray-100 shrink-0">
           <div className="flex items-center gap-2.5">
             <div
@@ -398,7 +384,6 @@ function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void })
           </button>
         </div>
 
-        {/* Nav — scrollable */}
         <nav
           className="flex-1 overflow-y-auto px-4 py-3 space-y-4"
           style={{ scrollbarWidth: 'thin', scrollbarColor: `${BRAND_MID} transparent` }}
@@ -420,7 +405,6 @@ function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void })
           ))}
         </nav>
 
-        {/* User footer */}
         <div
           className="border-t border-gray-100 bg-gray-50/40 px-5 py-3 shrink-0"
           style={{ paddingBottom: `calc(0.75rem + env(safe-area-inset-bottom))` }}
@@ -459,18 +443,13 @@ interface SidebarProps {
 export default function Sidebar({ open, onClose, onOpen }: SidebarProps) {
   return (
     <>
-      {/* Desktop: fixed left sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:w-60">
+      {/* Desktop: fixed left sidebar — w-56 wide */}
+      <div className={cn('hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex', SIDEBAR_W)}>
         <DesktopSidebar />
       </div>
 
-      {/* Mobile: fixed top bar */}
       <MobileTopBar onOpenDrawer={onOpen} />
-
-      {/* Mobile: fixed bottom tab bar */}
       <MobileBottomNav />
-
-      {/* Mobile: slide-up drawer */}
       <MobileDrawer open={open} onClose={onClose} />
     </>
   )
